@@ -10,10 +10,15 @@ updates:
     groups:
       patch-and-minor:
         update-types: [minor, patch]
+  # Actions are pinned by commit SHA (a moved or compromised tag cannot change
+  # what CI runs). Dependabot bumps the SHA and its version comment together.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: /
     schedule:
