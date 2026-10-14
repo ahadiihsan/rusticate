@@ -63,3 +63,47 @@ Do not loosen retry limits to make failures disappear.
 1. Look for long transactions; `idle_in_transaction_session_timeout` kills leaked ones after 15 s.
 2. Look for slow queries (`statement_timeout` 5 s).
 3. Look for a traffic spike. Scale horizontally only if Postgres has headroom; otherwise add PgBouncer in transaction mode (transaction-local tenant binding is compatible with it).
+
+## Repository settings (GitHub)
+
+These live in GitHub, not in the code, so a fork or a fresh copy of this boilerplate starts without them. Apply them once per repository (replace `OWNER/REPO`).
+
+**Branch protection (GOV-002).** The [`main` ruleset](../.github/rulesets/main.json):
+- blocks deletion and force pushes;
+- requires a pull request, squash-merged, with every conversation resolved;
+- requires the CI jobs `verify`, `container images build` and `migrations`, on a branch that is up to date with `main`;
+- requires CodeQL results with no new high-severity alert or error;
+- lets repository admins bypass only by merging a pull request, never by pushing.
+
+```sh
+gh api -X POST repos/OWNER/REPO/rulesets --input .github/rulesets/main.json
+```
+
+Required checks match CI **job names**. When you rename a job in [ci.yml](../.github/workflows/ci.yml), update the ruleset in the same change; otherwise the check never reports and every pull request waits forever. With a second maintainer, set `required_approving_review_count` to 1 and `require_code_owner_review` to `true` (nobody can approve their own pull request, so these stay off while there is one maintainer).
+
+**Security and Actions.**
+
+```sh
+R=repos/OWNER/REPO
+gh api -X PUT $R/vulnerability-alerts                  # Dependabot alerts
+gh api -X PUT $R/automated-security-fixes              # Dependabot security PRs
+gh api -X PUT $R/private-vulnerability-reporting       # see SECURITY.md
+gh api -X PATCH $R/code-scanning/default-setup -f state=configured   # CodeQL: rust, actions
+gh api -X PATCH $R -F allow_squash_merge=true -F allow_merge_commit=false \
+  -F allow_rebase_merge=false -f squash_merge_commit_title=PR_TITLE \
+  -f squash_merge_commit_message=PR_BODY -F delete_branch_on_merge=true \
+  -F allow_update_branch=true -F allow_auto_merge=true
+gh api -X PUT $R/actions/permissions -F enabled=true -f allowed_actions=selected
+gh api -X PUT $R/actions/permissions/selected-actions --input - <<'JSON'
+{"github_owned_allowed": true, "verified_allowed": true,
+ "patterns_allowed": ["Swatinem/rust-cache@*", "taiki-e/install-action@*"]}
+JSON
+gh api -X PUT $R/actions/permissions/workflow -f default_workflow_permissions=read \
+  -F can_approve_pull_request_reviews=false
+gh api -X PUT $R/actions/permissions/fork-pr-contributor-approval \
+  -f approval_policy=all_external_contributors
+```
+
+Secret scanning with push protection is on by default for public repositories; turn it on under *Settings → Advanced Security* for private ones.
+
+A new third-party action must be added to the allowlist above, and pinned by full commit SHA with its version in a comment (Dependabot keeps both current). SHA pinning is not enforced by the repository setting, because GitHub's own Dependabot workflow references its action by branch.
