@@ -1,6 +1,6 @@
 # SOP v1 → v2: what changed and why
 
-[SOP v1](../../rust_backend_architecture_engineering_sop.md) is kept unchanged. This log maps each v1 problem to its v2 resolution and where it is enforced. The detailed review of v1 is in [rust_backend_sop_assessment.md](../../rust_backend_sop_assessment.md).
+[SOP v1](rust-backend-sop-v1.md) is kept unchanged. This log maps each v1 problem to its v2 resolution and where it is enforced. The detailed review of v1 is in the git history: [rust_backend_sop_assessment.md](https://github.com/ahadiihsan/rusticate/blob/af3cac3b0968a2b0c6ff767461838986a65032a1/rust_backend_sop_assessment.md) (its line references point into v1).
 
 ## Kept from v1
 

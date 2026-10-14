@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Active. Supersedes [SOP v1](../../rust_backend_architecture_engineering_sop.md) (kept unchanged for reference). Changes from v1 and their reasons: [v1-to-v2.md](v1-to-v2.md). |
+| **Status** | Active. Supersedes [SOP v1](rust-backend-sop-v1.md) (kept unchanged for reference). Changes from v1 and their reasons: [v1-to-v2.md](v1-to-v2.md). |
 | **Applies to** | Every multi-tenant backend service in this workspace, written by engineers or coding agents. |
 | **Owner** | Platform team (see [`.github/CODEOWNERS`](../../.github/CODEOWNERS)). Changing a rule requires an ADR ([GOV-001](#13-governance-and-supply-chain-gov-sup)). |
 | **Stack** | Rust 2024 (toolchain pinned in [`rust-toolchain.toml`](../../rust-toolchain.toml)) · Tokio · Axum 0.8 · Tower · SQLx 0.9 on PostgreSQL 18 (RLS) · NATS JetStream · OpenTelemetry · utoipa (OpenAPI 3.1) |
