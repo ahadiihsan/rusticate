@@ -1,0 +1,70 @@
+# Publishes cargo-rusticate to crates.io when a release tag (vX.Y.Z) is
+# pushed, then creates the GitHub release. See cargo-rusticate/RELEASING.md.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: publish cargo-rusticate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # The generator fetches the template at v<its version>: they must agree.
+      - name: Tag matches the generator version
+        run: |
+          version=$(cargo metadata --manifest-path cargo-rusticate/Cargo.toml \
+            --no-deps --format-version 1 | jq -r '.packages[0].version')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match cargo-rusticate $version"
+            exit 1
+          fi
+
+      # Only reviewed code ships: the tagged commit must be on main.
+      - name: Tag is on main
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME points to a commit that is not on main"
+            exit 1
+          fi
+
+      - name: Test
+        run: cargo test --manifest-path cargo-rusticate/Cargo.toml --locked
+
+      - name: Publish
+        run: cargo publish --manifest-path cargo-rusticate/Cargo.toml --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  github-release:
+    name: GitHub release
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Create the release
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag \
+            --title "rusticate $GITHUB_REF_NAME" --generate-notes \
+            --notes "Install: \`cargo install cargo-rusticate --version ${GITHUB_REF_NAME#v}\`"
+        env:
+          GH_TOKEN: ${{ github.token }}

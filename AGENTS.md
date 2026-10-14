@@ -98,6 +98,10 @@ xtask/                         enforcement and scaffolding
 docs/                          SOP, ADRs, configuration, operations
 ```
 
+<!-- rusticate:template-only:start -->
+`cargo-rusticate/` is the project generator (`cargo rusticate new`): a standalone crate outside the workspace, never copied into generated projects (nor is `.github/workflows/release.yml`, which publishes it). Anything you add to the template ships to every new project, so the generator renames `rusticate`, `Rusticate`, the repository URL and `@ahadiihsan`, and refuses any other spelling of them. Content that only makes sense in this repository goes inside a template-only block, delimited by HTML comment lines like the ones around this paragraph. `cargo xtask ci` generates a project and runs its `verify --fast`. Details: [cargo-rusticate/README.md](cargo-rusticate/README.md).
+
+<!-- rusticate:template-only:end -->
 ## When stuck
 
 - An `arch` violation names a rule ID: read that rule in the SOP. The fix is almost always to move code to where the rule wants it, not to work around the check.

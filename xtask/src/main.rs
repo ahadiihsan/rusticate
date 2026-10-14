@@ -6,6 +6,7 @@
 mod arch;
 mod db;
 mod dev_env;
+mod generator;
 mod scaffold;
 mod sh;
 mod workspace;
@@ -195,7 +196,11 @@ fn fmt(check: bool) -> Result<()> {
     if check {
         args.extend(["--", "--check"]);
     }
-    sh::run(sh::cargo(args))
+    sh::run(sh::cargo(args))?;
+    if generator::present() {
+        generator::fmt(check)?;
+    }
+    Ok(())
 }
 
 fn lint() -> Result<()> {
@@ -268,6 +273,9 @@ fn verify(fast: bool) -> Result<()> {
     sh::step("format", || fmt(true))?;
     sh::step("architecture", arch::run)?;
     sh::step("lint", lint)?;
+    if generator::present() {
+        sh::step("generator (cargo-rusticate)", generator::check)?;
+    }
     if fast {
         println!(
             "\n✓ verify --fast passed (database tests skipped: run `cargo xtask verify` before finishing)"
@@ -292,6 +300,15 @@ fn ci() -> Result<()> {
     sh::step("migrate", db::migrate)?;
     sh::step("query metadata", || db::prepare(true))?;
     sh::step("tests", || test(&[], true))?;
+    if generator::present() {
+        sh::step("generator (cargo-rusticate)", generator::check)?;
+        sh::step("generator dependencies (cargo-deny)", generator::deny)?;
+        sh::step("generator minimum Rust version", generator::msrv)?;
+        sh::step(
+            "generator smoke test: generate, then verify",
+            generator::smoke,
+        )?;
+    }
     println!("\n✓ ci passed");
     Ok(())
 }

@@ -1,0 +1,432 @@
+//! Black-box tests: the real binary against a small fake template.
+#![cfg(test)]
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+/// A temporary directory removed at the end of the test.
+struct Scratch(PathBuf);
+
+impl Scratch {
+    fn new(label: &str) -> Self {
+        let n = NEXT.fetch_add(1, Ordering::Relaxed);
+        let dir = std::env::temp_dir().join(format!(
+            "cargo-rusticate-test-{}-{n}-{label}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        Self(dir)
+    }
+
+    fn path(&self) -> &Path {
+        &self.0
+    }
+}
+
+impl Drop for Scratch {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
+    }
+}
+
+fn write(root: &Path, file: &str, content: &str) {
+    let path = root.join(file);
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, content).unwrap();
+}
+
+fn read(root: &Path, file: &str) -> String {
+    fs::read_to_string(root.join(file)).unwrap()
+}
+
+fn git(dir: &Path, args: &[&str]) -> String {
+    let out = Command::new("git")
+        .current_dir(dir)
+        .args(args)
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stdout).unwrap()
+}
+
+const BINARY: &[u8] = &[
+    0xff, 0xfe, b'r', b'u', b's', b't', b'i', b'c', b'a', b't', b'e',
+];
+
+/// A minimal template with the identity in every form the generator handles.
+fn fake_template(root: &Path) {
+    write(root, "AGENTS.md", "# rusticate agents\n");
+    write(root, "architecture.toml", "# Rusticate architecture\n");
+    write(root, ".github/CODEOWNERS", "*  @ahadiihsan\n");
+    write(
+        root,
+        "SECURITY.md",
+        "[report](https://github.com/ahadiihsan/rusticate/security/advisories/new)\n",
+    );
+    write(
+        root,
+        "docs/history.md",
+        "[review](https://github.com/ahadiihsan/rusticate/blob/af3c/review.md)\n",
+    );
+    write(
+        root,
+        "README.md",
+        "# rusticate\n\n<!-- rusticate:template-only:start -->\n## Start a new project\n\n\
+         cargo install cargo-rusticate\n\n<!-- rusticate:template-only:end -->\n## Quickstart\n",
+    );
+    write(
+        root,
+        "cargo-rusticate/Cargo.toml",
+        "[package]\nname = \"cargo-rusticate\"\n",
+    );
+    write(root, ".github/workflows/ci.yml", "name: ci\n");
+    write(
+        root,
+        ".github/workflows/release.yml",
+        "run: cargo publish -p cargo-rusticate\n",
+    );
+    write(root, ".gitignore", "/target\n");
+    write(root, "target/debug/stale", "rusticate\n");
+    fs::write(root.join("logo.bin"), BINARY).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        write(root, "scripts/hook.sh", "#!/bin/sh\necho rusticate\n");
+        fs::set_permissions(
+            root.join("scripts/hook.sh"),
+            fs::Permissions::from_mode(0o755),
+        )
+        .unwrap();
+        write(root, ".agents/skills/x/SKILL.md", "skill\n");
+        fs::create_dir_all(root.join(".claude")).unwrap();
+        std::os::unix::fs::symlink("../.agents/skills", root.join(".claude/skills")).unwrap();
+    }
+    git(root, &["init", "--quiet"]);
+}
+
+fn rusticate(cwd: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_cargo-rusticate"))
+        .current_dir(cwd)
+        .arg("rusticate")
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+fn assert_ok(out: &Output) {
+    assert!(
+        out.status.success(),
+        "stdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+fn stderr(out: &Output) -> String {
+    String::from_utf8_lossy(&out.stderr).into_owned()
+}
+
+#[test]
+fn new_creates_a_project_with_the_new_identity() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let work = Scratch::new("work");
+    let tpl = template.path().to_str().unwrap();
+
+    let out = rusticate(
+        work.path(),
+        &["new", "acme-ledger", "--owner", "acme", "--template", tpl],
+    );
+
+    assert_ok(&out);
+    let project = work.path().join("acme-ledger");
+    assert_eq!(read(&project, "AGENTS.md"), "# acme-ledger agents\n");
+    assert_eq!(
+        read(&project, "architecture.toml"),
+        "# Acme Ledger architecture\n"
+    );
+    assert_eq!(read(&project, ".github/CODEOWNERS"), "*  @acme\n");
+    assert_eq!(
+        read(&project, "SECURITY.md"),
+        "[report](https://github.com/acme/acme-ledger/security/advisories/new)\n"
+    );
+    assert_eq!(
+        read(&project, "docs/history.md"),
+        "[review](https://github.com/ahadiihsan/rusticate/blob/af3c/review.md)\n",
+        "history links keep pointing at the template"
+    );
+    assert_eq!(
+        read(&project, "README.md"),
+        "# acme-ledger\n\n## Quickstart\n"
+    );
+    assert!(
+        !project.join("cargo-rusticate").exists(),
+        "the generator is not copied"
+    );
+    assert!(
+        !project.join(".github/workflows/release.yml").exists(),
+        "nor is the workflow that publishes it"
+    );
+    assert!(project.join(".github/workflows/ci.yml").exists());
+    assert!(
+        !project.join("target").exists(),
+        "ignored files are not copied"
+    );
+    assert_eq!(
+        fs::read(project.join("logo.bin")).unwrap(),
+        BINARY,
+        "binary files are untouched"
+    );
+    assert_eq!(
+        git(&project, &["symbolic-ref", "HEAD"]).trim(),
+        "refs/heads/main"
+    );
+    assert!(String::from_utf8_lossy(&out.stdout).contains("cd "));
+}
+
+#[cfg(unix)]
+#[test]
+fn new_keeps_symlinks_and_executable_bits() {
+    use std::os::unix::fs::PermissionsExt;
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--owner",
+            "acme",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert_ok(&out);
+    let project = work.path().join("svc");
+    let link = fs::read_link(project.join(".claude/skills")).unwrap();
+    assert_eq!(link, Path::new("../.agents/skills"));
+    assert_eq!(read(&project, ".claude/skills/x/SKILL.md"), "skill\n");
+    let mode = fs::metadata(project.join("scripts/hook.sh"))
+        .unwrap()
+        .permissions()
+        .mode();
+    assert_eq!(mode & 0o111, 0o111, "scripts stay executable");
+    assert_eq!(read(&project, "scripts/hook.sh"), "#!/bin/sh\necho svc\n");
+}
+
+#[test]
+fn init_fills_a_cloned_empty_repository_and_keeps_its_git() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let work = Scratch::new("work");
+    let repo = work.path().join("payments-api");
+    fs::create_dir_all(&repo).unwrap();
+    git(&repo, &["init", "--quiet"]);
+    git(
+        &repo,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "git@github.com:acme/payments-api.git",
+        ],
+    );
+
+    let out = rusticate(
+        &repo,
+        &[
+            "init",
+            "--owner",
+            "acme",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert_ok(&out);
+    assert_eq!(
+        read(&repo, "AGENTS.md"),
+        "# payments-api agents\n",
+        "name from the directory"
+    );
+    assert_eq!(
+        git(&repo, &["remote", "get-url", "origin"]).trim(),
+        "git@github.com:acme/payments-api.git"
+    );
+    assert!(
+        !String::from_utf8_lossy(&out.stdout).contains("cd "),
+        "already in the project"
+    );
+}
+
+#[test]
+fn init_refuses_a_directory_with_files_and_leaves_it_untouched() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let dir = Scratch::new("occupied");
+    write(dir.path(), "notes.txt", "mine\n");
+
+    let out = rusticate(
+        dir.path(),
+        &[
+            "init",
+            "--name",
+            "svc",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert!(!out.status.success());
+    assert!(stderr(&out).contains("is not empty"), "{}", stderr(&out));
+    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    assert_eq!(read(dir.path(), "notes.txt"), "mine\n");
+}
+
+#[test]
+fn new_refuses_a_non_empty_destination() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let work = Scratch::new("work");
+    write(work.path(), "svc/keep.txt", "keep\n");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert!(!out.status.success());
+    assert!(
+        stderr(&out).contains("not an empty directory"),
+        "{}",
+        stderr(&out)
+    );
+    assert_eq!(read(work.path(), "svc/keep.txt"), "keep\n");
+}
+
+#[test]
+fn invalid_names_and_owners_are_rejected_before_anything_is_written() {
+    let work = Scratch::new("work");
+    let bad_name = rusticate(work.path(), &["new", "My_Service"]);
+    assert!(
+        stderr(&bad_name).contains("invalid project name"),
+        "{}",
+        stderr(&bad_name)
+    );
+    let bad_owner = rusticate(work.path(), &["new", "svc", "--owner", "acme/team"]);
+    assert!(
+        stderr(&bad_owner).contains("invalid GitHub owner"),
+        "{}",
+        stderr(&bad_owner)
+    );
+    assert_eq!(fs::read_dir(work.path()).unwrap().count(), 0);
+}
+
+#[test]
+fn uncovered_identity_aborts_and_removes_the_new_directory() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    write(template.path(), "docs/shout.md", "WELCOME TO RUSTICATE\n");
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert!(!out.status.success());
+    let err = stderr(&out);
+    assert!(
+        err.contains("docs/shout.md: line 1") && err.contains("`RUSTICATE`"),
+        "{err}"
+    );
+    assert!(
+        !work.path().join("svc").exists(),
+        "a failed run leaves nothing behind"
+    );
+}
+
+#[test]
+fn a_directory_that_is_not_a_template_is_refused() {
+    let not_template = Scratch::new("not-template");
+    write(not_template.path(), "README.md", "hello\n");
+    git(not_template.path(), &["init", "--quiet"]);
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--template",
+            not_template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert!(
+        stderr(&out).contains("is not a rusticate template"),
+        "{}",
+        stderr(&out)
+    );
+    assert!(!work.path().join("svc").exists());
+}
+
+#[test]
+fn missing_owner_warns_and_leaves_a_placeholder() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--no-git",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert_ok(&out);
+    assert!(
+        stderr(&out).contains("no --owner given"),
+        "{}",
+        stderr(&out)
+    );
+    let project = work.path().join("svc");
+    assert_eq!(read(&project, ".github/CODEOWNERS"), "*  @OWNER\n");
+    assert!(!project.join(".git").exists(), "--no-git skips git init");
+}
+
+#[test]
+fn runs_without_the_cargo_prefix_and_reports_its_version() {
+    let out = Command::new(env!("CARGO_BIN_EXE_cargo-rusticate"))
+        .arg("--version")
+        .output()
+        .unwrap();
+    assert_ok(&out);
+    assert!(String::from_utf8_lossy(&out.stdout).contains(env!("CARGO_PKG_VERSION")));
+}

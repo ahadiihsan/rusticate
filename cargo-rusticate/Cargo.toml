@@ -1,0 +1,50 @@
+# The project generator: `cargo rusticate new my-service`.
+#
+# A standalone crate, deliberately outside the template's workspace: it is
+# published to crates.io on its own, and generated projects never contain it.
+# Its version is the template version it creates projects from (tag v<version>).
+[package]
+name = "cargo-rusticate"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Start a production-ready multi-tenant Rust backend from the rusticate boilerplate: `cargo rusticate new my-service`."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ahadiihsan/rusticate"
+homepage = "https://github.com/ahadiihsan/rusticate"
+readme = "README.md"
+keywords = ["template", "boilerplate", "scaffold", "backend", "multi-tenant"]
+categories = ["development-tools::cargo-plugins", "command-line-utilities", "web-programming"]
+include = ["src/**/*.rs", "tests/**/*.rs", "Cargo.toml", "Cargo.lock", "README.md", "LICENSE-MIT", "LICENSE-APACHE"]
+
+# Its own workspace root, so the template's workspace never includes it.
+[workspace]
+
+[dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.50", features = ["derive"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+unreachable_pub = "warn"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+indexing_slicing = "deny"
+string_slice = "deny"
+exit = "deny"
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+dbg_macro = "deny"
+missing_errors_doc = "allow"
+must_use_candidate = "allow"
+module_name_repetitions = "allow"
