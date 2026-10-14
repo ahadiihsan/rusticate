@@ -3,12 +3,11 @@
 
 use std::fs;
 use std::path::{Component, Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use anyhow::{Context as _, Result, bail, ensure};
+use anyhow::{Context as _, Result, ensure};
 
-use crate::tree;
+use crate::{git, tree};
 
 pub(crate) const DEFAULT_TEMPLATE: &str = "https://github.com/ahadiihsan/rusticate.git";
 
@@ -65,7 +64,7 @@ impl Source {
             Self::Local(dir) => copy_files(dir, &listed_files(dir)?, dest),
             Self::Git { url, git_ref } => {
                 let staging = Staging::create()?;
-                clone(url, git_ref.as_deref(), staging.path())?;
+                fetch(url, git_ref.as_deref(), staging.path())?;
                 let files: Vec<PathBuf> = tree::entries(staging.path())?
                     .into_iter()
                     .map(|entry| entry.path)
@@ -81,54 +80,36 @@ pub(crate) fn release_tag() -> String {
     format!("v{}", env!("CARGO_PKG_VERSION"))
 }
 
-fn clone(url: &str, git_ref: Option<&str>, into: &Path) -> Result<()> {
-    let mut git = Command::new("git");
-    git.args([
-        "clone",
-        "--quiet",
-        "--depth",
-        "1",
-        "--config",
-        "advice.detachedHead=false",
-    ]);
-    if let Some(git_ref) = git_ref {
-        git.args(["--branch", git_ref]);
-    }
-    git.arg(url).arg(into).stdout(Stdio::null());
-    let status = git
-        .status()
-        .context("could not run `git`: is it installed?")?;
-    if !status.success() {
+fn fetch(url: &str, git_ref: Option<&str>, into: &Path) -> Result<()> {
+    git::shallow_checkout(url, git_ref, into).with_context(|| {
         let at = git_ref.map(|r| format!(" at `{r}`")).unwrap_or_default();
-        bail!(
+        format!(
             "could not fetch the template from {url}{at} (pass `--ref main` for the latest \
              unreleased template, or `--template` for another source)"
-        );
-    }
-    Ok(())
+        )
+    })
 }
 
 /// Tracked and untracked-but-not-ignored files of a local checkout: its
 /// working tree as a commit would see it, without `target/` and the like.
 fn listed_files(dir: &Path) -> Result<Vec<PathBuf>> {
-    let output = Command::new("git")
-        .arg("-C")
-        .arg(dir)
-        .args([
+    let stdout = git::output(
+        dir,
+        &[
             "ls-files",
             "-z",
             "--cached",
             "--others",
             "--exclude-standard",
-        ])
-        .output()
-        .context("could not run `git`: is it installed?")?;
-    ensure!(
-        output.status.success(),
-        "`{}` is not a git checkout: a local template must be one",
-        dir.display()
-    );
-    let listing = String::from_utf8(output.stdout).context("non UTF-8 path in the template")?;
+        ],
+    )
+    .with_context(|| {
+        format!(
+            "`{}` is not a git checkout: a local template must be one",
+            dir.display()
+        )
+    })?;
+    let listing = String::from_utf8(stdout).context("non UTF-8 path in the template")?;
     Ok(listing
         .split('\0')
         .filter(|path| !path.is_empty())

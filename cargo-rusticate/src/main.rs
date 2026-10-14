@@ -4,6 +4,7 @@
 //! running the binary directly (`cargo-rusticate <args>`) works too.
 
 mod generate;
+mod git;
 mod identity;
 mod name;
 mod template;

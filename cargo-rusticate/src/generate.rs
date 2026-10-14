@@ -3,14 +3,13 @@
 
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 
 use anyhow::{Context as _, Result, ensure};
 
 use crate::identity::Identity;
 use crate::name::{Owner, ProjectName};
 use crate::template::Source;
-use crate::tree;
+use crate::{git, tree};
 
 #[derive(Debug)]
 pub(crate) struct Plan {
@@ -84,28 +83,11 @@ fn generate(plan: &Plan, dest: &Path) -> Result<Report> {
     let renamed = Identity::new(&plan.name, plan.owner.as_ref()).apply_to_tree(dest)?;
     let git_initialised = plan.init_git && !dest.join(".git").exists();
     if git_initialised {
-        git(dest, &["init", "--quiet"])?;
-        // `git init -b` needs git 2.28; this works everywhere.
-        git(dest, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
+        git::init(dest)?;
     }
     Ok(Report {
         files,
         renamed,
         git_initialised,
     })
-}
-
-fn git(dir: &Path, args: &[&str]) -> Result<()> {
-    let status = Command::new("git")
-        .current_dir(dir)
-        .args(args)
-        .status()
-        .context("could not run `git`: is it installed?")?;
-    ensure!(
-        status.success(),
-        "`git {}` failed in {}",
-        args.join(" "),
-        dir.display()
-    );
-    Ok(())
 }
