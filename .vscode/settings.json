@@ -1,0 +1,8 @@
+{
+  // CODEOWNERS has no extension, so VS Code may guess its language (often
+  // YAML, which then flags every valid entry). It uses gitignore-style
+  // patterns: the built-in "ignore" language matches it.
+  "files.associations": {
+    "CODEOWNERS": "ignore"
+  }
+}
