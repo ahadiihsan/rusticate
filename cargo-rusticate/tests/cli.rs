@@ -113,6 +113,32 @@ fn fake_template(root: &Path) {
     git(root, &["init", "--quiet"]);
 }
 
+/// The fake template as a git remote with an annotated release tag, like the
+/// real one. Returns its URL.
+fn released_template(root: &Path) -> String {
+    fake_template(root);
+    let identity = [
+        "-c",
+        "user.name=Template",
+        "-c",
+        "user.email=template@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "-c",
+        "tag.gpgsign=false",
+    ];
+    git(root, &["add", "-A"]);
+    git(
+        root,
+        &[&identity[..], &["commit", "--quiet", "-m", "template"]].concat(),
+    );
+    git(
+        root,
+        &[&identity[..], &["tag", "-a", "v9.9.9", "-m", "release"]].concat(),
+    );
+    format!("file://{}", root.display())
+}
+
 fn rusticate(cwd: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_cargo-rusticate"))
         .current_dir(cwd)
@@ -429,4 +455,82 @@ fn runs_without_the_cargo_prefix_and_reports_its_version() {
         .unwrap();
     assert_ok(&out);
     assert!(String::from_utf8_lossy(&out.stdout).contains(env!("CARGO_PKG_VERSION")));
+}
+
+#[test]
+fn a_release_tag_is_fetched_from_git_without_any_output_from_git() {
+    let template = Scratch::new("remote");
+    let url = released_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--owner",
+            "acme",
+            "--template",
+            &url,
+            "--ref",
+            "v9.9.9",
+        ],
+    );
+
+    assert_ok(&out);
+    assert_eq!(stderr(&out), "", "git must not talk on success");
+    let project = work.path().join("svc");
+    assert_eq!(read(&project, "AGENTS.md"), "# svc agents\n");
+    assert!(!project.join("cargo-rusticate").exists());
+    assert_eq!(
+        git(&project, &["symbolic-ref", "HEAD"]).trim(),
+        "refs/heads/main"
+    );
+    assert_eq!(
+        git(&project, &["rev-list", "--all", "--count"]).trim(),
+        "0",
+        "no template history"
+    );
+}
+
+#[test]
+fn without_a_ref_a_git_template_is_taken_from_its_default_branch() {
+    let template = Scratch::new("remote");
+    let url = released_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &["new", "svc", "--owner", "acme", "--template", &url],
+    );
+
+    assert_ok(&out);
+    assert_eq!(
+        read(&work.path().join("svc"), "AGENTS.md"),
+        "# svc agents\n"
+    );
+}
+
+#[test]
+fn a_missing_release_is_a_clear_error_and_leaves_nothing() {
+    let template = Scratch::new("remote");
+    let url = released_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = rusticate(
+        work.path(),
+        &["new", "svc", "--template", &url, "--ref", "v0.0.0"],
+    );
+
+    assert!(!out.status.success());
+    let err = stderr(&out);
+    assert!(
+        err.contains("could not fetch the template") && err.contains("`v0.0.0`"),
+        "{err}"
+    );
+    assert!(
+        err.contains("couldn't find remote ref"),
+        "git's own reason is shown: {err}"
+    );
+    assert!(!work.path().join("svc").exists());
 }
