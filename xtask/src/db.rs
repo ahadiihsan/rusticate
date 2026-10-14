@@ -65,5 +65,14 @@ pub fn prepare(check: bool) -> Result<()> {
     let mut cmd = sh::cargo(args);
     cmd.env("SQLX_OFFLINE", "false");
     dev_env::apply(&mut cmd);
-    sh::run(cmd)
+    sh::run(cmd)?;
+    if !check {
+        // rust-analyzer expands `query!` once per source edit and does not
+        // watch `.sqlx/`, so an expansion from before this run stays stale.
+        println!(
+            "✓ .sqlx updated. If your editor still shows \"no cached data for this query\", \
+             restart rust-analyzer."
+        );
+    }
+    Ok(())
 }

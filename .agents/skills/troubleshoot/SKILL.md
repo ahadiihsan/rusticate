@@ -12,6 +12,7 @@ First rule: fix the cause. Never silence the check (`#[allow]`, editing `archite
 | Symptom | Cause | Fix |
 |---|---|---|
 | `no cached data for this query` / `SQLX_OFFLINE` error | a new or changed `query!` without metadata | `cargo xtask db up && cargo xtask db migrate && cargo xtask db prepare` |
+| the same error only in the editor (rust-analyzer `macro-error`) while `cargo check` passes | stale expansion: rust-analyzer expanded the macro before `db prepare` wrote `.sqlx/`, and does not watch that directory | run **rust-analyzer: Restart server** (or edit the file) |
 | `query!` type mismatch, e.g. `expected Option<..>` | column nullability inferred by Postgres | fix the schema (`NOT NULL`), or override in SQL: `col AS "col!"` (non-null) or `AS "col?"` (nullable) |
 | `relation "x.y" does not exist` while compiling or preparing | migration not applied locally | `cargo xtask db migrate` (or `db reset`) |
 | `use of disallowed type axum::Json` | used axum's extractor | `api_kit::Json` (also `Path`, `Query`) |
