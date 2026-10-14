@@ -9,6 +9,24 @@ A production boilerplate for multi-tenant Rust backends. You get the standard, t
 
 Stack: Rust 2024 · Axum · SQLx on PostgreSQL 18 with row-level security · NATS JetStream · OpenTelemetry · OpenAPI 3.1.
 
+<!-- rusticate:template-only:start -->
+## Start a new project
+
+```sh
+cargo install cargo-rusticate
+cargo rusticate new my-service --owner <github-user-or-org>
+```
+
+Already created the repository on GitHub? Clone it and fill it in place (the directory may contain only `.git`):
+
+```sh
+git clone git@github.com:<owner>/my-service.git && cd my-service
+cargo rusticate init --owner <owner>
+```
+
+The generator copies this template at the release matching its version, renames it for your project, and starts a fresh git history. See [cargo-rusticate](cargo-rusticate/README.md).
+
+<!-- rusticate:template-only:end -->
 ## Quickstart
 
 Requirements: rustup, Docker.
@@ -56,3 +74,11 @@ The [implement-feature](.agents/skills/implement-feature/SKILL.md) skill walks t
 | `architecture.toml` | machine-readable architecture |
 | `docs/` | [SOP](docs/sop/rust-backend-sop-v2.md), [what changed from v1](docs/sop/v1-to-v2.md), [ADRs](docs/adr), [configuration](docs/configuration.md), [operations](docs/operations.md) |
 | `deploy/k8s/`, `Dockerfile` | reference deployment |
+<!-- rusticate:template-only:start -->
+
+## License
+
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT) at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
+<!-- rusticate:template-only:end -->
