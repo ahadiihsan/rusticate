@@ -88,6 +88,12 @@ fn fake_template(root: &Path) {
         "cargo-rusticate/Cargo.toml",
         "[package]\nname = \"cargo-rusticate\"\n",
     );
+    write(root, ".github/workflows/ci.yml", "name: ci\n");
+    write(
+        root,
+        ".github/workflows/release.yml",
+        "run: cargo publish -p cargo-rusticate\n",
+    );
     write(root, ".gitignore", "/target\n");
     write(root, "target/debug/stale", "rusticate\n");
     fs::write(root.join("logo.bin"), BINARY).unwrap();
@@ -166,6 +172,11 @@ fn new_creates_a_project_with_the_new_identity() {
         !project.join("cargo-rusticate").exists(),
         "the generator is not copied"
     );
+    assert!(
+        !project.join(".github/workflows/release.yml").exists(),
+        "nor is the workflow that publishes it"
+    );
+    assert!(project.join(".github/workflows/ci.yml").exists());
     assert!(
         !project.join("target").exists(),
         "ignored files are not copied"

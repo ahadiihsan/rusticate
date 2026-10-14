@@ -12,8 +12,9 @@ use crate::tree;
 
 pub(crate) const DEFAULT_TEMPLATE: &str = "https://github.com/ahadiihsan/rusticate.git";
 
-/// The generator's own directory inside the template: never copied.
-const GENERATOR_DIR: &str = "cargo-rusticate";
+/// Paths that exist only to build and release the template itself: the
+/// generator, and the workflow that publishes it. Never copied.
+const TEMPLATE_ONLY_PATHS: [&str; 2] = ["cargo-rusticate", ".github/workflows/release.yml"];
 
 /// Files every rusticate template has. Their absence means a wrong `--template`.
 const REQUIRED: [&str; 2] = ["AGENTS.md", "architecture.toml"];
@@ -145,7 +146,7 @@ fn copy_files(from: &Path, files: &[PathBuf], dest: &Path) -> Result<usize> {
     }
     let mut copied = 0;
     for file in files {
-        if is_generator(file) {
+        if is_template_only(file) {
             continue;
         }
         ensure!(
@@ -172,8 +173,11 @@ fn copy_files(from: &Path, files: &[PathBuf], dest: &Path) -> Result<usize> {
     Ok(copied)
 }
 
-fn is_generator(file: &Path) -> bool {
-    file.components().next() == Some(Component::Normal(GENERATOR_DIR.as_ref()))
+/// Matches whole path components: `cargo-rusticate/..` but not `cargo-rusticate.md`.
+fn is_template_only(file: &Path) -> bool {
+    TEMPLATE_ONLY_PATHS
+        .iter()
+        .any(|path| file.starts_with(path))
 }
 
 #[cfg(unix)]
@@ -250,9 +254,13 @@ mod tests {
     }
 
     #[test]
-    fn the_generator_directory_is_recognised_only_at_the_root() {
-        assert!(is_generator(Path::new("cargo-rusticate/Cargo.toml")));
-        assert!(!is_generator(Path::new("docs/cargo-rusticate/notes.md")));
-        assert!(!is_generator(Path::new("cargo-rusticate.md")));
+    fn template_only_paths_match_whole_components() {
+        assert!(is_template_only(Path::new("cargo-rusticate/Cargo.toml")));
+        assert!(is_template_only(Path::new(".github/workflows/release.yml")));
+        assert!(!is_template_only(Path::new(".github/workflows/ci.yml")));
+        assert!(!is_template_only(Path::new(
+            "docs/cargo-rusticate/notes.md"
+        )));
+        assert!(!is_template_only(Path::new("cargo-rusticate.md")));
     }
 }

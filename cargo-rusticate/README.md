@@ -53,7 +53,7 @@ The generated project keeps `LICENSE-MIT` and `LICENSE-APACHE`: they cover the c
 
 ## Working on the template
 
-The generator lives in the template repository, outside its Cargo workspace, and is never copied into generated projects.
+The generator lives in the template repository, outside its Cargo workspace. Neither it nor the workflow that publishes it (`.github/workflows/release.yml`) is copied into generated projects.
 
 - Everything added to the template ships to every new project. The rules in [`src/identity.rs`](src/identity.rs) decide what is renamed, kept or removed.
 - `cargo xtask verify` formats, lints and tests the generator. `cargo xtask ci` also checks its dependencies, builds it with the declared minimum Rust version, generates a project from the working tree and runs that project's `verify --fast`.
