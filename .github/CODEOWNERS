@@ -1,27 +1,33 @@
-# Replace the placeholder teams with your organisation's teams.
-#
-# Architecture, guardrails and supply-chain policy change only with platform
-# review: these files ARE the standard (SOP §1, GOV-002).
-/architecture.toml             @your-org/platform
-/clippy.toml                   @your-org/platform
-/crates/domains/*-engine/clippy.toml @your-org/platform
-/deny.toml                     @your-org/platform
-/rust-toolchain.toml           @your-org/platform
-/Cargo.toml                    @your-org/platform
-/.github/                      @your-org/platform
-/xtask/                        @your-org/platform
-/docs/sop/                     @your-org/platform
-/AGENTS.md                     @your-org/platform
-/.agents/                      @your-org/platform
+# One maintainer for now. The sections mark the intended split: when teams
+# exist, give each section its team (role in brackets), e.g. @org/platform.
+# Later rules override earlier ones.
 
-# The platform layer: tenancy, auth, messaging.
-/crates/foundation/            @your-org/platform
-/crates/domains/iam/           @your-org/platform @your-org/security
-/docker/                       @your-org/platform
+# Default owner of everything.
+*                              @ahadiihsan
 
-# Every migration needs a database-literate reviewer.
-**/migrations/                 @your-org/database-reviewers
+# [platform] Architecture, guardrails and supply-chain policy change only with
+# platform review: these files ARE the standard (SOP §1, GOV-002).
+/architecture.toml             @ahadiihsan
+/clippy.toml                   @ahadiihsan
+/crates/domains/*-engine/clippy.toml @ahadiihsan
+/deny.toml                     @ahadiihsan
+/rust-toolchain.toml           @ahadiihsan
+/Cargo.toml                    @ahadiihsan
+/.github/                      @ahadiihsan
+/xtask/                        @ahadiihsan
+/docs/sop/                     @ahadiihsan
+/AGENTS.md                     @ahadiihsan
+/.agents/                      @ahadiihsan
 
-# Bounded contexts are owned by their product teams.
-/crates/domains/billing/       @your-org/billing
-/crates/domains/billing-engine/ @your-org/billing
+# [platform] The platform layer: tenancy, auth, messaging.
+# [security] also reviews iam.
+/crates/foundation/            @ahadiihsan
+/crates/domains/iam/           @ahadiihsan
+/docker/                       @ahadiihsan
+
+# [database-reviewers] Every migration needs a database-literate reviewer.
+**/migrations/                 @ahadiihsan
+
+# [billing] Bounded contexts are owned by their product teams.
+/crates/domains/billing/       @ahadiihsan
+/crates/domains/billing-engine/ @ahadiihsan
