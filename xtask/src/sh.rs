@@ -67,7 +67,17 @@ pub fn output(mut command: Command) -> Result<String> {
 
 /// Whether `tool` is on PATH (as itself, or as a cargo subcommand).
 pub fn available(tool: &str) -> bool {
-    Command::new(tool)
+    // Cargo subcommands (`cargo-nextest`, `cargo-llvm-cov`, ...) are probed
+    // the way cargo invokes them; some reject being run directly.
+    let mut probe = match tool.strip_prefix("cargo-") {
+        Some(subcommand) => {
+            let mut cargo = Command::new("cargo");
+            cargo.arg(subcommand);
+            cargo
+        }
+        None => Command::new(tool),
+    };
+    probe
         .arg("--version")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
