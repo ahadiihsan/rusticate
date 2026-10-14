@@ -1,0 +1,186 @@
+# =============================================================================
+# Workspace manifest. Rules: docs/sop/rust-backend-sop-v2.md
+# Tier layout and dependency rules are machine-checked by `cargo xtask arch`
+# against architecture.toml. Do not add a member without adding it there.
+# =============================================================================
+[workspace]
+resolver = "3"
+members = [
+    "apps/*",
+    "crates/foundation/*",
+    "crates/domains/*",
+    "xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+
+[workspace.dependencies]
+# ---- Internal: foundation (tier 2) ------------------------------------------
+api-kit = { path = "crates/foundation/api-kit" }
+datastore = { path = "crates/foundation/datastore" }
+idempotency = { path = "crates/foundation/idempotency" }
+messaging = { path = "crates/foundation/messaging" }
+op-context = { path = "crates/foundation/op-context" }
+server-kit = { path = "crates/foundation/server-kit" }
+telemetry = { path = "crates/foundation/telemetry" }
+test-kit = { path = "crates/foundation/test-kit" }
+
+# ---- Internal: domains (tier 3) ---------------------------------------------
+billing = { path = "crates/domains/billing" }
+billing-engine = { path = "crates/domains/billing-engine" }
+iam = { path = "crates/domains/iam" }
+# xtask:domains (`cargo xtask new domain` registers contexts here)
+
+# ---- Async runtime & HTTP ---------------------------------------------------
+axum = { version = "0.8.9", features = ["macros"] }
+futures = { version = "0.3.34", default-features = false, features = ["std"] }
+http = "1.5"
+http-body-util = "0.1.5"
+tokio = { version = "1.53", features = ["rt-multi-thread", "macros", "signal", "time", "sync", "net"] }
+tokio-util = { version = "0.7.20", default-features = false }
+tower = { version = "0.5.3", features = ["util", "timeout", "limit", "load-shed"] }
+tower-http = { version = "0.7.1", features = [
+    "catch-panic",
+    "compression-gzip",
+    "compression-zstd",
+    "cors",
+    "limit",
+    "sensitive-headers",
+    "set-header",
+    "trace",
+] }
+
+# ---- Persistence ------------------------------------------------------------
+sqlx = { version = "0.9.0", default-features = false, features = [
+    "runtime-tokio",
+    "tls-rustls-ring-webpki",
+    "postgres",
+    "macros",
+    "migrate",
+    "uuid",
+    "chrono",
+    "json",
+    "sqlx-toml",
+] }
+
+# ---- Messaging --------------------------------------------------------------
+async-nats = "0.50"
+
+# ---- Serialization & primitives --------------------------------------------
+base64 = "0.23"
+chrono = { version = "0.4.45", default-features = false, features = ["std", "clock", "serde"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.11"
+uuid = { version = "1.28", features = ["v7", "serde"] }
+
+# ---- Errors -----------------------------------------------------------------
+anyhow = "1.0.104"
+thiserror = "2.0.21"
+
+# ---- Security ---------------------------------------------------------------
+jsonwebtoken = { version = "11.1", default-features = false, features = ["aws_lc_rs", "use_pem"] }
+secrecy = { version = "0.10.3", features = ["serde"] }
+
+# ---- Contract (OpenAPI) -----------------------------------------------------
+utoipa = { version = "6.0", features = ["uuid", "chrono", "macros"] }
+utoipa-axum = "0.3"
+utoipa-scalar = { version = "0.4", features = ["axum"] }
+
+# ---- Observability ----------------------------------------------------------
+opentelemetry = { version = "0.33.1", default-features = false, features = ["trace"] }
+opentelemetry-otlp = { version = "0.33.1", default-features = false, features = ["grpc-tonic", "trace"] }
+opentelemetry_sdk = { version = "0.33.1", default-features = false, features = ["trace", "rt-tokio"] }
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+tracing-opentelemetry = { version = "0.34", default-features = false }
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json", "fmt", "registry"] }
+
+# ---- Binaries ---------------------------------------------------------------
+clap = { version = "4.6", features = ["derive", "env"] }
+figment = { version = "0.10.19", features = ["env", "toml"] }
+mimalloc = "0.1.52"
+
+# ---- Testing ----------------------------------------------------------------
+proptest = "1.12"
+rust_decimal = "1.43" # test oracle only — production money math is integer-based
+
+# ---- Tooling (xtask only) ---------------------------------------------------
+cargo_metadata = "0.23"
+proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
+regex = "1.13"
+syn = { version = "3.0", features = ["full", "visit", "extra-traits"] }
+toml = "1.1"
+walkdir = "2.5"
+
+# =============================================================================
+# COMPILER GUARDRAILS — every member except xtask sets `[lints] workspace = true`
+# (verified by `cargo xtask arch`). Exceptions require
+# `#[expect(lint, reason = "...")]`; bare `#[allow]` is itself denied.
+# =============================================================================
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+unreachable_pub = "warn"
+let_underscore_drop = "warn"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# Zero-panic production code (tests are exempt via clippy.toml).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+indexing_slicing = "deny"
+string_slice = "deny"
+exit = "deny"
+mem_forget = "deny"
+
+# Exceptions must be explicit and justified.
+allow_attributes = "deny"
+allow_attributes_without_reason = "deny"
+
+# Money & resource safety.
+float_arithmetic = "deny"
+float_cmp = "deny"
+large_futures = "warn"
+await_holding_lock = "deny"
+
+# No ad-hoc output: use `tracing`.
+dbg_macro = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+
+# Pedantic lints that fight idiomatic code here.
+missing_errors_doc = "allow"
+must_use_candidate = "allow"
+module_name_repetitions = "allow"
+
+# =============================================================================
+# PROFILES
+# =============================================================================
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+# sqlx recommends optimizing its macros: it makes `query!` type-checking much faster.
+[profile.dev.package.sqlx-macros]
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only" # symbolized backtraces in production
+overflow-checks = true     # integer overflow is a bug, never silent wraparound
+panic = "unwind"           # required: the HTTP catch-panic layer depends on unwinding

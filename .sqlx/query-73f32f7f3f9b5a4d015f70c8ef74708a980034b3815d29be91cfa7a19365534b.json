@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            current_user::text AS \"name!\",\n            r.rolsuper AS \"is_superuser!\",\n            r.rolbypassrls AS \"bypasses_rls!\",\n            EXISTS (\n                SELECT 1\n                FROM pg_class c\n                JOIN pg_namespace n ON n.oid = c.relnamespace\n                WHERE c.relowner = r.oid\n                  AND c.relkind IN ('r', 'p')\n                  AND n.nspname NOT IN ('pg_catalog', 'information_schema')\n                  AND n.nspname NOT LIKE 'pg_toast%'\n            ) AS \"owns_tables!\"\n        FROM pg_roles r\n        WHERE r.rolname = current_user\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_superuser!",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "pg_roles",
+            "name": "rolsuper"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "bypasses_rls!",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "pg_roles",
+            "name": "rolbypassrls"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "owns_tables!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "73f32f7f3f9b5a4d015f70c8ef74708a980034b3815d29be91cfa7a19365534b"
+}

@@ -1,0 +1,56 @@
+use api_kit::ApiError;
+use datastore::DataStoreError;
+use idempotency::IdempotencyError;
+use messaging::HandlerError;
+use op_context::AuthzError;
+use {{domain_ident}}_engine::EngineError;
+
+/// Everything a {{domain}} workflow can fail with (ERR-001). Workflows return
+/// this, never `ApiError`; the HTTP mapping lives in one place, below.
+#[derive(Debug, thiserror::Error)]
+pub enum {{Domain}}Error {
+    #[error(transparent)]
+    Forbidden(#[from] AuthzError),
+    #[error(transparent)]
+    Rule(#[from] EngineError),
+    #[error(transparent)]
+    Idempotency(#[from] IdempotencyError),
+    #[error(transparent)]
+    Store(#[from] DataStoreError),
+    #[error("stored data is inconsistent: {0}")]
+    Corrupt(String),
+}
+
+impl From<sqlx::Error> for {{Domain}}Error {
+    fn from(err: sqlx::Error) -> Self {
+        Self::Store(err.into())
+    }
+}
+
+impl From<serde_json::Error> for {{Domain}}Error {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Store(err.into())
+    }
+}
+
+impl From<{{Domain}}Error> for ApiError {
+    fn from(err: {{Domain}}Error) -> Self {
+        match err {
+            {{Domain}}Error::Forbidden(authz) => authz.into(),
+            {{Domain}}Error::Rule(rule) => Self::unprocessable("{{DOMAIN}}_RULE_VIOLATED", rule.to_string()),
+            {{Domain}}Error::Idempotency(idempotency) => idempotency.into(),
+            {{Domain}}Error::Store(store) => store.into(),
+            corrupt @ {{Domain}}Error::Corrupt(_) => Self::internal(corrupt),
+        }
+    }
+}
+
+/// For event consumers: retry only what can succeed on retry.
+impl From<{{Domain}}Error> for HandlerError {
+    fn from(err: {{Domain}}Error) -> Self {
+        match err {
+            {{Domain}}Error::Store(store) => store.into(),
+            other => Self::permanent(other),
+        }
+    }
+}

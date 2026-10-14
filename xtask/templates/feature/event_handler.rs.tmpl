@@ -1,0 +1,23 @@
+//! HOP 1 (event form): decode the event and call the workflow.
+
+use datastore::TenantTx;
+use messaging::{EventHandler, HandlerError, InboundEvent};
+use op_context::{OpCtx, Permission};
+
+use super::{{feature}};
+use crate::permissions;
+
+/// Durable consumer, registered in the worker.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct {{Feature}};
+
+impl EventHandler for {{Feature}} {
+    const CONSUMER: &'static str = "{{domain_kebab}}-{{feature_kebab}}";
+    /// SCAFFOLD: the exact event types (`<context>.<aggregate>.<verb>.vN`) to consume.
+    const EVENT_TYPES: &'static [&'static str] = &["{{domain}}.example.happened.v1"];
+    const PERMISSIONS: &'static [Permission] = &[permissions::{{PERMISSION}}];
+
+    async fn handle(&self, ctx: &OpCtx, tx: &mut TenantTx, event: &InboundEvent) -> Result<(), HandlerError> {
+        Ok({{feature}}(ctx, tx, event.id).await?)
+    }
+}

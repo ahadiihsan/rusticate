@@ -1,0 +1,161 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, customer_email, currency, status, subtotal_minor, tax_rate_bps,\n               tax_minor, total_minor, version, issued_at, voided_at, void_reason\n        FROM billing.invoices\n        WHERE tenant_id = $1 AND id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "customer_email",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "customer_email"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "currency",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "currency"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "status",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "status"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "subtotal_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "subtotal_minor"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tax_rate_bps",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "tax_rate_bps"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "tax_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "tax_minor"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "total_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "total_minor"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "issued_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "issued_at"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "voided_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "voided_at"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "void_reason",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "void_reason"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "cde8bf1611799ab9694ccf6d08bf58af5cda984f805cf115024dc88f51b80aef"
+}

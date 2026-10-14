@@ -1,0 +1,7 @@
+# Migration linter (DB-011), run by CI on every changed migration.
+# sqlx wraps each migration in a transaction.
+assume_in_transaction = true
+pg_version = "18.0"
+# Integer widths are chosen deliberately per column (bounded quantities,
+# basis points, row versions); money and counters are already BIGINT.
+excluded_rules = ["prefer-bigint-over-int", "prefer-bigint-over-smallint"]

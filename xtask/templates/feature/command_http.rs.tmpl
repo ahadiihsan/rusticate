@@ -1,0 +1,71 @@
+//! HOP 1: HTTP adapter for `{{feature}}`. Parse, call, render. No business
+//! logic, no SQL.
+
+use api_kit::{ApiError, ApiResult, Json, ProblemDetails};
+use axum::extract::State;
+use datastore::DataStore;
+use idempotency::IdempotencyKey;
+use op_context::OpCtx;
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+
+use super::{{{Feature}}Cmd, {{feature}}};
+
+#[derive(Debug, Deserialize, ToSchema)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct {{Feature}}Request {
+    /// SCAFFOLD: the request body.
+    reference: String,
+}
+
+/// Parse, don't validate: report every violation at once.
+impl TryFrom<{{Feature}}Request> for {{Feature}}Cmd {
+    type Error = ApiError;
+
+    fn try_from(request: {{Feature}}Request) -> Result<Self, Self::Error> {
+        let reference = request.reference.trim();
+        if reference.is_empty() {
+            return Err(ApiError::validation("reference", "must not be blank"));
+        }
+        Ok(Self {
+            reference: reference.to_owned(),
+        })
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct {{Feature}}Response {
+    reference: String,
+}
+
+/// SCAFFOLD: one-line summary for the API reference.
+#[utoipa::path(
+    post,
+    path = "/v1/{{domain_kebab}}/{{feature_kebab}}",
+    operation_id = "{{featureCamel}}",
+    tag = "{{domain}}",
+    request_body = {{Feature}}Request,
+    params(
+        ("Idempotency-Key" = String, Header, description = "Client-generated key, unique per intended operation."),
+    ),
+    responses(
+        (status = 200, description = "Done (or replayed).", body = {{Feature}}Response),
+        (status = 400, description = "Invalid request.", body = ProblemDetails, content_type = "application/problem+json"),
+        (status = 403, description = "Missing `{{permission_name}}`.", body = ProblemDetails, content_type = "application/problem+json"),
+        (status = 409, description = "A request with this key is in flight.", body = ProblemDetails, content_type = "application/problem+json"),
+        (status = 422, description = "Business rule violated or key reused.", body = ProblemDetails, content_type = "application/problem+json"),
+    ),
+    security(("bearer" = [])),
+)]
+pub(crate) async fn handle(
+    ctx: OpCtx,
+    State(db): State<DataStore>,
+    key: IdempotencyKey,
+    Json(request): Json<{{Feature}}Request>,
+) -> ApiResult<Json<{{Feature}}Response>> {
+    let cmd = {{Feature}}Cmd::try_from(request)?;
+    let result = {{feature}}(&ctx, &db, &key, cmd).await?;
+    Ok(Json({{Feature}}Response {
+        reference: result.reference,
+    }))
+}

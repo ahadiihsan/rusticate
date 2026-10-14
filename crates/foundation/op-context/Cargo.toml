@@ -1,0 +1,29 @@
+[package]
+name = "op-context"
+description = "Unforgeable operation context: tenant, actor, permissions, correlation (SOP SEC-*)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+# Axum extractor (`OpCtx` as a handler argument) and ApiError conversions.
+axum = ["dep:axum", "dep:api-kit"]
+# Capability to construct an OpCtx. Restricted by `cargo xtask arch` to the
+# crates listed under [capabilities.mint] in architecture.toml.
+mint = []
+
+[dependencies]
+api-kit = { workspace = true, optional = true }
+axum = { workspace = true, optional = true }
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

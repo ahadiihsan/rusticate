@@ -1,0 +1,12 @@
+//! HOP 3: SQL for `{{feature}}`. Compile-time checked (`query!` family), no
+//! business branching, every statement keyed on `tenant_id`.
+
+use datastore::TenantTx;
+
+/// SCAFFOLD: replace with this feature's queries against the `{{schema}}`
+/// schema, then run `cargo xtask db prepare`.
+pub(super) async fn current_tenant(tx: &mut TenantTx) -> Result<uuid::Uuid, sqlx::Error> {
+    sqlx::query_scalar!(r#"SELECT $1::uuid AS "tenant_id!""#, tx.tenant_id().as_uuid())
+        .fetch_one(tx.conn())
+        .await
+}

@@ -1,0 +1,8 @@
+-- {{Domain}} bounded context. The `{{domain}}` schema is created by the
+-- migrator (sqlx.toml). Add tables with `cargo xtask new migration {{domain}} <description>`.
+
+-- Fail fast instead of queueing behind live traffic (DB-011).
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '5min';
+
+GRANT USAGE ON SCHEMA {{domain}} TO app_rw;

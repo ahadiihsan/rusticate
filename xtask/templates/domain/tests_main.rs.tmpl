@@ -1,0 +1,7 @@
+//! {{Domain}} integration tests (TEST-002): one binary per crate, every test
+//! on a fresh migrated database as the real `app_rw` role.
+#![cfg(test)]
+
+mod schema;
+mod support;
+// xtask:tests

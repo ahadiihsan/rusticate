@@ -1,0 +1,33 @@
+[package]
+name = "iam"
+description = "Shared IAM context: bearer-token verification producing an OpCtx (SOP SEC-*)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[features]
+default = []
+# Token issuing for tests and local development. Never enabled by a deployable binary
+# (`cargo xtask arch` verifies apps do not enable it).
+dev-tokens = []
+
+[dependencies]
+api-kit.workspace = true
+axum.workspace = true
+jsonwebtoken.workspace = true
+op-context = { workspace = true, features = ["axum", "mint"] }
+secrecy.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+iam = { path = ".", features = ["dev-tokens"] }
+http-body-util.workspace = true
+tokio.workspace = true
+tower.workspace = true
+
+[lints]
+workspace = true

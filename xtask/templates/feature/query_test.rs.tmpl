@@ -1,0 +1,27 @@
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use test_kit::ctx;
+use {{domain_ident}}::permissions::{{PERMISSION}};
+use {{domain_ident}}::{{feature}}::{{feature}};
+use {{domain_ident}}::{{Domain}}Error;
+
+use crate::support;
+
+#[sqlx::test(migrations = false)]
+async fn {{feature}}_requires_its_permission(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+
+    let outcome = {{feature}}(&ctx::user(ctx::tenant(), &[]), &db.app).await;
+
+    assert!(matches!(outcome, Err({{Domain}}Error::Forbidden(_))));
+}
+
+#[sqlx::test(migrations = false)]
+async fn {{feature}}_reads_only_the_callers_tenant(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+    let tenant = ctx::tenant();
+
+    let view = {{feature}}(&ctx::user(tenant, &[{{PERMISSION}}]), &db.app).await.unwrap();
+
+    assert_eq!(view.tenant_id, tenant.as_uuid());
+    // SCAFFOLD: seed data for two tenants and assert only the caller's is returned.
+}

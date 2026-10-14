@@ -1,0 +1,30 @@
+-- {{description}}
+--
+-- SCAFFOLD: adapt the tenant-table template below (SOP DB-004/DB-005), or
+-- replace it. Rules the schema guard enforces:
+--   * tenant_id NOT NULL DEFAULT platform.current_tenant_id()
+--   * primary key, unique indexes and foreign keys lead with tenant_id
+--   * ENABLE + FORCE row level security with the canonical policy
+--   * explicit minimal grants to app_rw; never TRUNCATE
+-- Migrations are immutable once merged: fix forward with a new migration.
+-- Indexes on EXISTING tables: CREATE INDEX CONCURRENTLY in a migration of
+-- its own (`-- no-transaction` first line), never inside a transaction.
+
+-- Fail fast instead of queueing behind live traffic (DB-011).
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '5min';
+
+CREATE TABLE {{schema}}.example (
+    tenant_id   uuid        NOT NULL DEFAULT platform.current_tenant_id(),
+    id          uuid        NOT NULL,
+    version     integer     NOT NULL DEFAULT 1,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT example_pkey PRIMARY KEY (tenant_id, id)
+);
+
+ALTER TABLE {{schema}}.example ENABLE ROW LEVEL SECURITY;
+ALTER TABLE {{schema}}.example FORCE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation ON {{schema}}.example
+    USING (tenant_id = (SELECT platform.current_tenant_id()))
+    WITH CHECK (tenant_id = (SELECT platform.current_tenant_id()));
+GRANT SELECT, INSERT, UPDATE ON {{schema}}.example TO app_rw;

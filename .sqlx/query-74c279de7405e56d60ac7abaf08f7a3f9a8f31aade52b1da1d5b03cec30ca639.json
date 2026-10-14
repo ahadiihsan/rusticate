@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO platform.outbox_events\n                (id, tenant_id, event_type, aggregate_type, aggregate_id, payload,\n                 correlation_id, traceparent)\n            VALUES ($1, $2, $3, $4, $5, $6::text::jsonb, $7, $8)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "74c279de7405e56d60ac7abaf08f7a3f9a8f31aade52b1da1d5b03cec30ca639"
+}

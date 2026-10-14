@@ -1,0 +1,86 @@
+# =============================================================================
+# Machine-readable architecture (SOP §2). `cargo xtask arch` enforces every
+# rule in this file on every run of `cargo xtask verify` and in CI.
+#
+# Changing this file changes the architecture: it requires an ADR
+# (docs/adr/) and review by the platform owners (see .github/CODEOWNERS).
+# =============================================================================
+
+# ---- Tiers ------------------------------------------------------------------
+# A crate belongs to the first tier whose `members` glob matches its path.
+# `may_depend_on` lists tiers its [dependencies] may come from.
+
+[[tiers]]
+name = "tooling"
+members = ["xtask"]
+exempt = true # build tooling: not shipped, not constrained
+
+[[tiers]]
+name = "testing"
+members = ["crates/foundation/test-kit"]
+may_depend_on = ["foundation"]
+dev_only = true # may appear only under [dev-dependencies]
+
+[[tiers]]
+name = "engine"
+members = ["crates/domains/*-engine"]
+may_depend_on = []
+# ENG-001: pure crates use an allowlist, not a denylist.
+allowed_external = ["serde", "thiserror"]
+allowed_dev_external = ["proptest", "rust_decimal"]
+
+[[tiers]]
+name = "foundation"
+members = ["crates/foundation/*"]
+may_depend_on = ["foundation"]
+
+[[tiers]]
+name = "domain"
+members = ["crates/domains/*"]
+# A domain may depend on foundation crates, ITS OWN engine (`<name>-engine`)
+# and the shared contexts below. Other contexts are reached through events.
+may_depend_on = ["foundation", "own-engine", "shared-domain"]
+
+[[tiers]]
+name = "app"
+members = ["apps/*"]
+may_depend_on = ["foundation", "domain", "engine"]
+
+[domains]
+# Published-language contexts other contexts may call directly.
+shared = ["iam"]
+
+# ---- Restricted capabilities ------------------------------------------------
+# Source-level capabilities only the listed crates may use (checked in src/,
+# not in tests/). Each entry names the rule it protects.
+
+[capabilities.mint]
+rule = "SEC-002"
+description = "constructing an OpCtx (op_context::mint)"
+allowed = ["iam", "messaging", "test-kit"]
+
+[capabilities.system_store]
+rule = "DB-002"
+description = "cross-tenant database access (SystemStore / SystemTx)"
+allowed = ["datastore", "messaging", "server-kit", "test-kit", "worker"]
+
+[capabilities.raw_sql]
+rule = "DB-010"
+description = "runtime (not compile-time checked) SQL: sqlx::query(..), query_as(..), raw_sql(..); write the checked macros fully qualified (sqlx::query!(..)) and never import sqlx::query*"
+allowed = ["test-kit"]
+
+[capabilities.pool]
+rule = "DB-001"
+description = "raw connection pools (PgPool, PgPoolOptions)"
+allowed = ["datastore", "test-kit", "api", "worker"]
+
+[capabilities.session_settings]
+rule = "DB-003"
+description = "setting the tenant/role of a connection (set_config, SET ROLE)"
+allowed = ["datastore", "test-kit"]
+
+# ---- Features that must never reach a deployable binary ---------------------
+[[forbidden_features]]
+rule = "SEC-005"
+feature = "iam/dev-tokens"
+in_tiers = ["app"] # as a normal dependency; dev-dependencies are fine

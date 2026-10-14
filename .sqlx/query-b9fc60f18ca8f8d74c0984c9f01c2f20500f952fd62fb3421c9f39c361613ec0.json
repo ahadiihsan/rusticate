@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE billing.invoices\n        SET status = $3,\n            voided_at = now(),\n            void_reason = $4,\n            version = version + 1\n        WHERE tenant_id = $1 AND id = $2 AND version = $5\n        RETURNING voided_at AS \"voided_at!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "voided_at!",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "voided_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "b9fc60f18ca8f8d74c0984c9f01c2f20500f952fd62fb3421c9f39c361613ec0"
+}

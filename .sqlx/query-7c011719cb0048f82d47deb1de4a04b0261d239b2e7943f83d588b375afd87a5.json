@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT description, quantity, unit_price_minor, line_total_minor\n        FROM billing.invoice_lines\n        WHERE tenant_id = $1 AND invoice_id = $2\n        ORDER BY line_no\n        LIMIT $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "description",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_lines",
+            "name": "description"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "quantity",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_lines",
+            "name": "quantity"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "unit_price_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_lines",
+            "name": "unit_price_minor"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "line_total_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_lines",
+            "name": "line_total_minor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7c011719cb0048f82d47deb1de4a04b0261d239b2e7943f83d588b375afd87a5"
+}

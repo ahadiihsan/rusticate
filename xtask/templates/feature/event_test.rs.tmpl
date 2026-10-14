@@ -1,0 +1,42 @@
+use messaging::{InboundEvent, Outcome, process};
+use op_context::CorrelationId;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use test_kit::ctx;
+use uuid::Uuid;
+use {{domain_ident}}::{{feature}}::{{{Feature}}, {{feature}}};
+use {{domain_ident}}::{{Domain}}Error;
+
+use crate::support;
+
+fn event(tenant: op_context::TenantId) -> InboundEvent {
+    InboundEvent {
+        id: Uuid::now_v7(),
+        event_type: "{{domain}}.example.happened.v1".to_owned(),
+        tenant_id: tenant,
+        correlation_id: CorrelationId::new_v7(),
+        aggregate_id: Uuid::now_v7(),
+        traceparent: None,
+        payload: serde_json::json!({}),
+    }
+}
+
+#[sqlx::test(migrations = false)]
+async fn {{feature}}_takes_effect_once_per_event(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+    let delivery = event(ctx::tenant());
+
+    assert_eq!(process(&db.app, &{{Feature}}, &delivery).await.unwrap(), Outcome::Processed);
+    assert_eq!(process(&db.app, &{{Feature}}, &delivery).await.unwrap(), Outcome::Duplicate);
+    // SCAFFOLD: assert the effect happened exactly once.
+}
+
+#[sqlx::test(migrations = false)]
+async fn {{feature}}_requires_its_permission(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+    let user = ctx::user(ctx::tenant(), &[]);
+    let mut tx = db.app.begin(&user).await.unwrap();
+
+    let outcome = {{feature}}(&user, &mut tx, Uuid::now_v7()).await;
+
+    assert!(matches!(outcome, Err({{Domain}}Error::Forbidden(_))));
+}

@@ -1,0 +1,5 @@
+# DB-011: this bounded context owns the `{{domain}}` schema and tracks its own
+# migrations there. NEVER change these values after the first production deploy.
+[migrate]
+table-name = "{{domain}}._sqlx_migrations"
+create-schemas = ["{{domain}}"]

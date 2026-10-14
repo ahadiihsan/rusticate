@@ -1,0 +1,20 @@
+[profile.default]
+fail-fast = false
+slow-timeout = { period = "30s", terminate-after = 4 }
+
+# Database tests each create a throwaway database (`#[sqlx::test]`); cap their
+# parallelism so a laptop Postgres is never exhausted.
+[test-groups]
+database = { max-threads = 8 }
+
+[[profile.default.overrides]]
+filter = "rdeps(datastore)"
+test-group = "database"
+
+[profile.ci]
+fail-fast = false
+retries = 0
+status-level = "fail"
+
+[profile.ci.junit]
+path = "junit.xml"

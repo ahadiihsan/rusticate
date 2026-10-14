@@ -1,0 +1,11 @@
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use test_kit::schema;
+
+use crate::support;
+
+#[sqlx::test(migrations = false)]
+async fn schema_satisfies_tenant_invariants(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+
+    schema::assert_schema_invariants(db.owner_pool()).await;
+}

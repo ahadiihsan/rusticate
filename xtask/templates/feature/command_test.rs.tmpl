@@ -1,0 +1,39 @@
+use idempotency::IdempotencyKey;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use test_kit::ctx;
+use {{domain_ident}}::permissions::{{PERMISSION}};
+use {{domain_ident}}::{{feature}}::{{{Feature}}Cmd, {{feature}}};
+use {{domain_ident}}::{{Domain}}Error;
+
+use crate::support;
+
+fn cmd() -> {{Feature}}Cmd {
+    {{Feature}}Cmd {
+        reference: "ref-1".to_owned(),
+    }
+}
+
+fn key(raw: &str) -> IdempotencyKey {
+    IdempotencyKey::parse(raw).unwrap()
+}
+
+#[sqlx::test(migrations = false)]
+async fn {{feature}}_requires_its_permission(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+
+    let outcome = {{feature}}(&ctx::user(ctx::tenant(), &[]), &db.app, &key("k"), cmd()).await;
+
+    assert!(matches!(outcome, Err({{Domain}}Error::Forbidden(_))));
+}
+
+#[sqlx::test(migrations = false)]
+async fn {{feature}}_replays_retries(pool: PgPoolOptions, conn: PgConnectOptions) {
+    let db = support::db(pool, conn).await;
+    let user = ctx::user(ctx::tenant(), &[{{PERMISSION}}]);
+
+    let first = {{feature}}(&user, &db.app, &key("k"), cmd()).await.unwrap();
+    let retry = {{feature}}(&user, &db.app, &key("k"), cmd()).await.unwrap();
+
+    assert_eq!(first, retry);
+    // SCAFFOLD: assert the effects, every failure mode, and tenant isolation.
+}

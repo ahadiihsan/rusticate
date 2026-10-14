@@ -1,0 +1,5 @@
+# DB-011: this bounded context owns the `billing` schema and tracks its own
+# migrations there. NEVER change these values after the first production deploy.
+[migrate]
+table-name = "billing._sqlx_migrations"
+create-schemas = ["billing"]

@@ -1,0 +1,129 @@
+# Product API (OPS-002, OPS-003, OPS-006).
+#
+# Shutdown contract: on SIGTERM the process reports not-ready for
+# APP_HTTP__DRAIN_DELAY_MS (5s) while still serving, then drains in-flight
+# requests for up to APP_HTTP__SHUTDOWN_TIMEOUT_MS (20s). The grace period
+# below (60s) must exceed their sum. No preStop hook is needed (and none would
+# work: the image has no shell).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rustic-api
+  labels:
+    app.kubernetes.io/name: rustic
+    app.kubernetes.io/component: api
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustic
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rustic
+        app.kubernetes.io/component: api
+    spec:
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: rustic
+              app.kubernetes.io/component: api
+      containers:
+        - name: api
+          image: rustic-api:latest # pinned by digest in your release pipeline
+          args: ["serve"]
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: rustic-api # APP_DATABASE__URL (app_rw), APP_AUTH__PUBLIC_KEY_PEM, ...
+          env:
+            - name: APP_ENVIRONMENT
+              value: production
+            - name: APP_TELEMETRY__OTLP_ENDPOINT
+              value: http://otel-collector.observability:4317
+          startupProbe:
+            httpGet: { path: /health/ready, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 250m, memory: 128Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rustic-api
+  labels:
+    app.kubernetes.io/name: rustic
+    app.kubernetes.io/component: api
+spec:
+  selector:
+    app.kubernetes.io/name: rustic
+    app.kubernetes.io/component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rustic-api
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustic
+      app.kubernetes.io/component: api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: rustic-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rustic-api
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65

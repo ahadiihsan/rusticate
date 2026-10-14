@@ -1,0 +1,55 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO billing.settings (tenant_id, currency, tax_rate_bps, updated_by)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (tenant_id) DO NOTHING\n        RETURNING currency, tax_rate_bps, version\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "currency",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.settings",
+            "name": "currency"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tax_rate_bps",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.settings",
+            "name": "tax_rate_bps"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.settings",
+            "name": "version"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int4",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "71362498b5a5566ad7855f87dd53ba681a39b9a2f5816496bc164bf27c2ff246"
+}

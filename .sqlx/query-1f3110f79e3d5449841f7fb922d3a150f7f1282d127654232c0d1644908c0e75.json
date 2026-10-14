@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT currency, issued_count, issued_total_minor, voided_count, voided_total_minor\n        FROM billing.invoice_stats\n        WHERE tenant_id = $1\n        ORDER BY currency\n        LIMIT 64\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "currency",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_stats",
+            "name": "currency"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "issued_count",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_stats",
+            "name": "issued_count"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "issued_total_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_stats",
+            "name": "issued_total_minor"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "voided_count",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_stats",
+            "name": "voided_count"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "voided_total_minor",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "billing.invoice_stats",
+            "name": "voided_total_minor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1f3110f79e3d5449841f7fb922d3a150f7f1282d127654232c0d1644908c0e75"
+}

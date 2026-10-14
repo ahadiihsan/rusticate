@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM platform.inbox_events\n        WHERE ctid = ANY (ARRAY(\n            SELECT ctid FROM platform.inbox_events\n            WHERE processed_at < now() - make_interval(days => $2)\n            LIMIT $1\n        ))\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c571d6224db624fd56b49d871485a532eeb1745677f404c0a8869d8ee64784c"
+}

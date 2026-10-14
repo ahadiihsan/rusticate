@@ -1,0 +1,31 @@
+[package]
+name = "server-kit"
+description = "HTTP runtime shared by every binary: middleware stack, health probes, graceful shutdown, API docs (SOP OPS-*, API-*)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+api-kit.workspace = true
+axum.workspace = true
+datastore.workspace = true
+futures.workspace = true
+http.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+telemetry.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+utoipa.workspace = true
+utoipa-scalar.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+http-body-util.workspace = true
+
+[lints]
+workspace = true

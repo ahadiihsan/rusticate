@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Gate before code leaves the machine: format, architecture, lint.
+# The full `cargo xtask verify` (database tests) runs in CI and before
+# declaring a task done.
+set -eu
+cargo xtask verify --fast

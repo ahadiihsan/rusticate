@@ -1,0 +1,24 @@
+//! Event-driven feature: SCAFFOLD: describe which events trigger it and
+//! what it changes. Same three hops; hop 1 is `handler.rs`.
+
+mod db;
+mod handler;
+
+use datastore::TenantTx;
+use op_context::OpCtx;
+use uuid::Uuid;
+
+pub use handler::{{Feature}};
+
+use crate::{permissions, {{Domain}}Error};
+
+/// HOP 2 (consumer form): runs inside the transaction the consumer runtime
+/// opened, so the inbox record and these effects commit together.
+#[tracing::instrument(name = "{{domain}}.{{feature}}", skip_all, fields(tenant_id = %ctx.tenant_id()))]
+pub async fn {{feature}}(ctx: &OpCtx, tx: &mut TenantTx, event_id: Uuid) -> Result<(), {{Domain}}Error> {
+    ctx.require(permissions::{{PERMISSION}})?;
+    tracing::debug!(%event_id, "handling event");
+    // SCAFFOLD: decode facts from the event, apply effects through db::*.
+    db::current_tenant(tx).await?;
+    Ok(())
+}

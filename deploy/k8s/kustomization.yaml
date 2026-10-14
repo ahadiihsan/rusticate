@@ -1,0 +1,8 @@
+# Base manifests. Environments overlay replicas, image digests and secrets.
+# Deploy order: migrate-job (wait for completion) → api → worker.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - migrate-job.yaml
+  - api.yaml
+  - worker.yaml

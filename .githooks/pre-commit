@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Fast gate on every commit (seconds): formatting and architecture rules.
+# Installed by `cargo xtask setup` (git config core.hooksPath .githooks).
+set -eu
+cargo xtask fmt --check
+cargo xtask arch

@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO platform.idempotency_keys\n            (tenant_id, actor_id, operation, idempotency_key, fingerprint, expires_at)\n        VALUES ($1, $2, $3, $4, $5, now() + interval '24 hours')\n        ON CONFLICT (tenant_id, actor_id, operation, idempotency_key) DO UPDATE\n            SET fingerprint = EXCLUDED.fingerprint,\n                response    = NULL,\n                created_at  = now(),\n                expires_at  = EXCLUDED.expires_at\n            WHERE platform.idempotency_keys.expires_at <= now()\n        RETURNING true AS \"claimed!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "claimed!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Bytea"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "469f7d696d4aa5b4e023116d08a13986eac1ab11e1cb4a4f42c7ac1f35bc0e07"
+}

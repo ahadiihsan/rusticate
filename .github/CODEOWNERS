@@ -1,0 +1,27 @@
+# Replace the placeholder teams with your organisation's teams.
+#
+# Architecture, guardrails and supply-chain policy change only with platform
+# review: these files ARE the standard (SOP §1, GOV-002).
+/architecture.toml             @your-org/platform
+/clippy.toml                   @your-org/platform
+/crates/domains/*-engine/clippy.toml @your-org/platform
+/deny.toml                     @your-org/platform
+/rust-toolchain.toml           @your-org/platform
+/Cargo.toml                    @your-org/platform
+/.github/                      @your-org/platform
+/xtask/                        @your-org/platform
+/docs/sop/                     @your-org/platform
+/AGENTS.md                     @your-org/platform
+/.agents/                      @your-org/platform
+
+# The platform layer: tenancy, auth, messaging.
+/crates/foundation/            @your-org/platform
+/crates/domains/iam/           @your-org/platform @your-org/security
+/docker/                       @your-org/platform
+
+# Every migration needs a database-literate reviewer.
+**/migrations/                 @your-org/database-reviewers
+
+# Bounded contexts are owned by their product teams.
+/crates/domains/billing/       @your-org/billing
+/crates/domains/billing-engine/ @your-org/billing

@@ -1,0 +1,7 @@
+/target
+.env
+*.profraw
+lcov.info
+/coverage
+junit.xml
+.DS_Store

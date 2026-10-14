@@ -1,0 +1,32 @@
+# Workspace clippy configuration.
+#
+# NOTE: clippy uses the *nearest* clippy.toml. Engine crates
+# (crates/domains/*-engine/clippy.toml) carry their own stricter copy; when you
+# change shared settings here, mirror them there (`cargo xtask arch` verifies
+# that every engine config contains every entry of this file).
+
+# Tests may panic, unwrap, index and print.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-dbg-in-tests = true
+allow-print-in-tests = true
+
+# Project vocabulary that is not code (".." keeps clippy's defaults).
+doc-valid-idents = ["JetStream", "PostgreSQL", "OpenTelemetry", "OpenAPI", "ETag", "UUIDv7", ".."]
+
+max-fn-params-bools = 1
+too-many-arguments-threshold = 6
+
+disallowed-methods = [
+    { path = "std::thread::sleep", reason = "blocks the async runtime; use tokio::time::sleep" },
+    { path = "std::env::var", reason = "CFG-001: read configuration once at startup through the typed config struct" },
+    { path = "std::env::var_os", reason = "CFG-001: read configuration once at startup through the typed config struct" },
+]
+
+disallowed-types = [
+    { path = "axum::Json", reason = "API-003: use api_kit::Json (problem+json rejections)" },
+    { path = "axum::extract::Path", reason = "API-003: use api_kit::Path (problem+json rejections)" },
+    { path = "axum::extract::Query", reason = "API-003: use api_kit::Query (problem+json rejections)" },
+]

@@ -1,0 +1,53 @@
+# Supply-chain policy (SOP SUP-001..SUP-004), enforced by `cargo deny check`
+# in `cargo xtask ci`. Changing an allowlist requires review by the platform
+# owners (.github/CODEOWNERS).
+
+[graph]
+all-features = true
+
+[advisories]
+# Every RustSec vulnerability fails the build. An exception needs an entry
+# here with the advisory id and a reason, and an expiry tracked in an issue.
+yanked = "deny"
+ignore = []
+
+[licenses]
+# Permissive licenses only. Copyleft (GPL, AGPL, LGPL) is not allowed in
+# shipped binaries.
+allow = [
+    "0BSD",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSL-1.0",
+    "CDLA-Permissive-2.0",
+    "ISC",
+    "MIT",
+    "Unicode-3.0",
+    "Unlicense",
+    "Zlib",
+]
+confidence-threshold = 0.9
+
+[licenses.private]
+# Workspace crates are `publish = false`; they carry no license field.
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+highlight = "all"
+deny = [
+    # TLS is rustls-only: no system OpenSSL in images, no CVE surface from it.
+    { crate = "openssl", reason = "SUP-003: use rustls" },
+    { crate = "openssl-sys", reason = "SUP-003: use rustls" },
+    { crate = "native-tls", reason = "SUP-003: use rustls" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

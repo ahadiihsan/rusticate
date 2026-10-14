@@ -1,0 +1,36 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO billing.invoices (\n            tenant_id, id, customer_email, currency, status,\n            subtotal_minor, tax_rate_bps, tax_minor, total_minor, issued_by\n        )\n        VALUES ($1, $2, $3, $4, 'issued', $5, $6, $7, $8, $9)\n        RETURNING issued_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "issued_at",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "billing.invoices",
+            "name": "issued_at"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int8",
+        "Int4",
+        "Int8",
+        "Int8",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6def9610d9f44db13b0450f6963f1d787119216b0a77a2d7517906b6fe81c65a"
+}

@@ -1,0 +1,6 @@
+# Pinned toolchain: every engineer, agent and CI run uses the exact same compiler
+# and clippy. Bump deliberately (Renovate/Dependabot PR), never implicitly.
+[toolchain]
+channel = "1.99.0"
+components = ["rustfmt", "clippy", "llvm-tools-preview"]
+profile = "minimal"

@@ -1,0 +1,18 @@
+[package]
+name = "{{domain}}-engine"
+description = "Pure {{domain}} rules: no I/O, no async (SOP ENG-*)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+# ENG-001: an engine depends only on the allowlist in architecture.toml.
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true

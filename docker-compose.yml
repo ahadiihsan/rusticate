@@ -1,0 +1,48 @@
+# Local development dependencies. Start with `cargo xtask db up`.
+# Ports are offset (55432) so a host Postgres on 5432 never collides.
+name: rustic
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "55432:5432"
+    # Dev/test tuning only: fsync off makes `#[sqlx::test]` database creation fast.
+    # NEVER copy these flags to a real environment.
+    command:
+      - postgres
+      - -c
+      - max_connections=400
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+      - -c
+      - full_page_writes=off
+      - -c
+      - log_min_duration_statement=250
+    volumes:
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rustic"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  nats:
+    image: nats:2.12-alpine
+    command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    volumes:
+      - natsdata:/data
+
+volumes:
+  pgdata:
+  natsdata:

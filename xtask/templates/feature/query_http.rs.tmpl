@@ -1,0 +1,35 @@
+//! HOP 1: HTTP adapter for `{{feature}}`.
+
+use api_kit::{ApiResult, Json, ProblemDetails};
+use axum::extract::State;
+use datastore::DataStore;
+use op_context::OpCtx;
+use serde::Serialize;
+use utoipa::ToSchema;
+use uuid::Uuid;
+
+use super::{{feature}};
+
+#[derive(Debug, Serialize, ToSchema)]
+pub(crate) struct {{Feature}}Response {
+    tenant_id: Uuid,
+}
+
+/// SCAFFOLD: one-line summary for the API reference.
+#[utoipa::path(
+    get,
+    path = "/v1/{{domain_kebab}}/{{feature_kebab}}",
+    operation_id = "{{featureCamel}}",
+    tag = "{{domain}}",
+    responses(
+        (status = 200, description = "The result.", body = {{Feature}}Response),
+        (status = 403, description = "Missing `{{permission_name}}`.", body = ProblemDetails, content_type = "application/problem+json"),
+    ),
+    security(("bearer" = [])),
+)]
+pub(crate) async fn handle(ctx: OpCtx, State(db): State<DataStore>) -> ApiResult<Json<{{Feature}}Response>> {
+    let view = {{feature}}(&ctx, &db).await?;
+    Ok(Json({{Feature}}Response {
+        tenant_id: view.tenant_id,
+    }))
+}

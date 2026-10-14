@@ -1,0 +1,40 @@
+# Schema migrations run as a separate, owner-privileged step BEFORE the new
+# api/worker version rolls out (DB-012). Migrations must be backwards
+# compatible with the running version (expand/contract, DB-011).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rustic-migrate
+  labels:
+    app.kubernetes.io/name: rustic
+    app.kubernetes.io/component: migrate
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rustic
+        app.kubernetes.io/component: migrate
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: rustic-api:latest # pinned by digest in your release pipeline
+          args: ["migrate"]
+          envFrom:
+            - secretRef:
+                name: rustic-api # needs APP_MIGRATION_DATABASE_URL (app_owner)
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }

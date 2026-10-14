@@ -1,0 +1,6 @@
+# DB-011: each schema-owning crate tracks its migrations in its own table, in
+# its own schema, so bounded contexts can be mounted into any product database
+# independently. NEVER change these values after the first production deploy.
+[migrate]
+table-name = "platform._sqlx_migrations"
+create-schemas = ["platform"]

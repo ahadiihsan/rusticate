@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM platform.idempotency_keys\n        WHERE ctid = ANY (ARRAY(\n            SELECT ctid FROM platform.idempotency_keys\n            WHERE expires_at < now()\n            LIMIT $1\n        ))\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a951c4bc209681d491e1077f26c44cd3edd288b3262e6d9256d235f13b8a9101"
+}

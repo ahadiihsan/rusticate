@@ -1,0 +1,34 @@
+//! {{Domain}} bounded context.
+//!
+//! SCAFFOLD: one paragraph in the ubiquitous language: what this context
+//! owns, and what it deliberately does not.
+//!
+//! Feature slices follow the shape of the `billing` reference context
+//! (SOP §4): `<feature>.rs` workflow, `<feature>/http.rs` adapter,
+//! `<feature>/db.rs` private SQL. Add them with
+//! `cargo xtask new feature {{domain}} <verb_noun>`.
+
+mod error;
+pub mod events;
+pub mod permissions;
+
+// xtask:features
+
+use axum::extract::FromRef;
+use datastore::DataStore;
+use utoipa_axum::router::OpenApiRouter;
+
+pub use error::{{Domain}}Error;
+
+/// Migrations for the `{{domain}}` schema. Run after `datastore::MIGRATOR`.
+pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!();
+
+/// HTTP routes of this context, mountable by any product binary.
+pub fn router<S>() -> OpenApiRouter<S>
+where
+    S: Clone + Send + Sync + 'static,
+    DataStore: FromRef<S>,
+{
+    OpenApiRouter::new()
+        // xtask:routes
+}

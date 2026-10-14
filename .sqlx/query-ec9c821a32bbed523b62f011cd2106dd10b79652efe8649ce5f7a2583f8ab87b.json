@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO billing.invoice_lines (\n            tenant_id, invoice_id, line_no, description, quantity, unit_price_minor, line_total_minor\n        )\n        SELECT $1, $2, line.*\n        FROM UNNEST($3::int2[], $4::text[], $5::int4[], $6::int8[], $7::int8[])\n            AS line(line_no, description, quantity, unit_price_minor, line_total_minor)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2Array",
+        "TextArray",
+        "Int4Array",
+        "Int8Array",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ec9c821a32bbed523b62f011cd2106dd10b79652efe8649ce5f7a2583f8ab87b"
+}

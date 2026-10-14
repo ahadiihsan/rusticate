@@ -1,0 +1,115 @@
+# CI runs exactly what engineers and agents run locally: `cargo xtask ci`.
+# YAML only provisions the machine; every rule lives in the repository.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUST_BACKTRACE: "1"
+
+jobs:
+  verify:
+    name: verify (fmt, arch, lint, docs, deny, contract, tests, coverage)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      # rustup installs the exact toolchain from rust-toolchain.toml.
+      - name: Toolchain
+        run: rustup show active-toolchain
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-bin: true
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest,cargo-deny,cargo-llvm-cov
+
+      - name: Install sqlx-cli
+        run: |
+          command -v sqlx >/dev/null || cargo install sqlx-cli --version 0.9.0 \
+            --no-default-features --features postgres,rustls,sqlx-toml
+
+      - name: Start Postgres and NATS
+        run: cargo xtask db up
+
+      - name: cargo xtask ci
+        run: cargo xtask ci
+
+      - name: Coverage (TEST-006, ≥ 80 % lines)
+        run: cargo xtask coverage --fail-under 80
+
+      - name: Test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            target/nextest/ci/junit.xml
+            lcov.info
+          if-no-files-found: ignore
+
+  migrations:
+    name: migrations (immutability, squawk)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # DB-011: merged migrations are immutable. Fix forward with a new one.
+      - name: Merged migrations are unchanged
+        run: |
+          changed=$(git diff --name-only --diff-filter=MDR \
+            "origin/${{ github.base_ref }}...HEAD" -- '*/migrations/*.sql')
+          if [ -n "$changed" ]; then
+            echo "::error::Merged migrations must never change. Add a new migration instead:"
+            echo "$changed"
+            exit 1
+          fi
+
+      - name: Lint new migrations (squawk)
+        run: |
+          added=$(git diff --name-only --diff-filter=A \
+            "origin/${{ github.base_ref }}...HEAD" -- '*/migrations/*.sql')
+          if [ -z "$added" ]; then echo "no new migrations"; exit 0; fi
+          npx --yes squawk-cli@2.69.0 $added
+
+  image:
+    name: container images build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Build api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build worker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: worker
+          push: false
+          cache-from: type=gha

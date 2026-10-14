@@ -1,0 +1,8 @@
+//! Shared fixtures for the {{domain}} integration tests.
+
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
+use test_kit::TestDb;
+
+pub(crate) async fn db(pool: PgPoolOptions, conn: PgConnectOptions) -> TestDb {
+    TestDb::new(pool, conn, &[&{{domain_ident}}::MIGRATOR]).await
+}

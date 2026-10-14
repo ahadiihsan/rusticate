@@ -1,0 +1,26 @@
+[package]
+name = "idempotency"
+description = "Idempotent mutations: Idempotency-Key extractor and same-transaction key storage (SOP API-005)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+api-kit.workspace = true
+axum.workspace = true
+datastore.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+op-context = { workspace = true, features = ["mint"] }
+test-kit.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

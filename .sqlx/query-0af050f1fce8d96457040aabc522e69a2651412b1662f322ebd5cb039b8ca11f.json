@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE billing.settings\n        SET currency = $2,\n            tax_rate_bps = $3,\n            updated_by = $4,\n            updated_at = now(),\n            version = version + 1\n        WHERE tenant_id = $1 AND version = $5\n        RETURNING currency, tax_rate_bps, version\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "currency",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "billing.settings",
+            "name": "currency"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tax_rate_bps",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.settings",
+            "name": "tax_rate_bps"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "billing.settings",
+            "name": "version"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int4",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0af050f1fce8d96457040aabc522e69a2651412b1662f322ebd5cb039b8ca11f"
+}

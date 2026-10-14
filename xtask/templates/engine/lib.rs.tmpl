@@ -1,0 +1,11 @@
+//! Pure rules of the {{domain}} context (SOP ENG-001..ENG-006): no I/O, no
+//! async, no clock, no randomness, no floats. Same input, same output.
+//!
+//! SCAFFOLD: add the context's rules as pure functions, each with example
+//! tests and property tests checked against an independent oracle or an
+//! algebraic law (see billing-engine).
+#![deny(clippy::arithmetic_side_effects, clippy::as_conversions)]
+
+mod error;
+
+pub use error::EngineError;

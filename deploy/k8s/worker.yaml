@@ -1,0 +1,75 @@
+# Worker: outbox relay (one active leader, others hot standby), event
+# consumers (load-balanced by the durable JetStream consumer), maintenance.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rustic-worker
+  labels:
+    app.kubernetes.io/name: rustic
+    app.kubernetes.io/component: worker
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustic
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rustic
+        app.kubernetes.io/component: worker
+    spec:
+      terminationGracePeriodSeconds: 60
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: worker
+          image: rustic-worker:latest # pinned by digest in your release pipeline
+          ports:
+            - name: health
+              containerPort: 8081
+          envFrom:
+            - secretRef:
+                name: rustic-worker # APP_DATABASE__URL (app_rw), APP_SYSTEM_DATABASE__URL (app_system), APP_NATS__URL
+          env:
+            - name: APP_NATS__STREAM_REPLICAS
+              value: "3"
+            - name: APP_TELEMETRY__OTLP_ENDPOINT
+              value: http://otel-collector.observability:4317
+          readinessProbe:
+            httpGet: { path: /health/ready, port: health }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /health/live, port: health }
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 100m, memory: 96Mi }
+            limits: { memory: 384Mi }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rustic-worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rustic
+      app.kubernetes.io/component: worker

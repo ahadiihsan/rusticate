@@ -1,0 +1,6 @@
+//! Domain events published by {{domain}} (public contract, SOP MSG-003).
+//!
+//! Each event is a struct implementing `datastore::DomainEvent` with
+//! `EVENT_TYPE = "{{domain}}.<aggregate>.<past_tense_verb>.v1"`. Events are
+//! versioned and immutable once published, carry no personal data, and are
+//! emitted only through `TenantTx::emit` inside the workflow's transaction.
