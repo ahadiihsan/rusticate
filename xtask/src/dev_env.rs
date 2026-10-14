@@ -9,14 +9,14 @@
 
 use std::process::Command;
 
-pub const DATABASE_URL: &str = "postgres://app_owner:app_owner@localhost:55432/rustic";
+pub const DATABASE_URL: &str = "postgres://app_owner:app_owner@localhost:55432/rusticate";
 pub const ISSUER: &str = "https://auth.local.test";
-pub const AUDIENCE: &str = "rustic-api";
+pub const AUDIENCE: &str = "rusticate-api";
 /// Development-only signing secret; production verifies with a public key.
 pub const HS256_SECRET: &str = "local-dev-secret-at-least-32-bytes-long!";
 
-const APP_RW_URL: &str = "postgres://app_rw:app_rw@localhost:55432/rustic";
-const APP_SYSTEM_URL: &str = "postgres://app_system:app_system@localhost:55432/rustic";
+const APP_RW_URL: &str = "postgres://app_rw:app_rw@localhost:55432/rusticate";
+const APP_SYSTEM_URL: &str = "postgres://app_system:app_system@localhost:55432/rusticate";
 
 /// Tooling defaults: migrations, query metadata, `#[sqlx::test]`.
 const TOOLING: &[(&str, &str)] = &[

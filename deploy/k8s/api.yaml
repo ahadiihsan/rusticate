@@ -8,9 +8,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rustic-api
+  name: rusticate-api
   labels:
-    app.kubernetes.io/name: rustic
+    app.kubernetes.io/name: rusticate
     app.kubernetes.io/component: api
 spec:
   replicas: 3
@@ -22,12 +22,12 @@ spec:
       maxSurge: 25%
   selector:
     matchLabels:
-      app.kubernetes.io/name: rustic
+      app.kubernetes.io/name: rusticate
       app.kubernetes.io/component: api
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: rustic
+        app.kubernetes.io/name: rusticate
         app.kubernetes.io/component: api
     spec:
       terminationGracePeriodSeconds: 60
@@ -42,18 +42,18 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app.kubernetes.io/name: rustic
+              app.kubernetes.io/name: rusticate
               app.kubernetes.io/component: api
       containers:
         - name: api
-          image: rustic-api:latest # pinned by digest in your release pipeline
+          image: rusticate-api:latest # pinned by digest in your release pipeline
           args: ["serve"]
           ports:
             - name: http
               containerPort: 8080
           envFrom:
             - secretRef:
-                name: rustic-api # APP_DATABASE__URL (app_rw), APP_AUTH__PUBLIC_KEY_PEM, ...
+                name: rusticate-api # APP_DATABASE__URL (app_rw), APP_AUTH__PUBLIC_KEY_PEM, ...
           env:
             - name: APP_ENVIRONMENT
               value: production
@@ -85,13 +85,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rustic-api
+  name: rusticate-api
   labels:
-    app.kubernetes.io/name: rustic
+    app.kubernetes.io/name: rusticate
     app.kubernetes.io/component: api
 spec:
   selector:
-    app.kubernetes.io/name: rustic
+    app.kubernetes.io/name: rusticate
     app.kubernetes.io/component: api
   ports:
     - name: http
@@ -101,23 +101,23 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: rustic-api
+  name: rusticate-api
 spec:
   minAvailable: 2
   selector:
     matchLabels:
-      app.kubernetes.io/name: rustic
+      app.kubernetes.io/name: rusticate
       app.kubernetes.io/component: api
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: rustic-api
+  name: rusticate-api
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: rustic-api
+    name: rusticate-api
   minReplicas: 3
   maxReplicas: 20
   metrics:

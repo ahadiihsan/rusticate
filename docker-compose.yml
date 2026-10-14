@@ -1,6 +1,6 @@
 # Local development dependencies. Start with `cargo xtask db up`.
 # Ports are offset (55432) so a host Postgres on 5432 never collides.
-name: rustic
+name: rusticate
 
 services:
   postgres:
@@ -29,7 +29,7 @@ services:
       - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d rustic"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rusticate"]
       interval: 2s
       timeout: 3s
       retries: 30

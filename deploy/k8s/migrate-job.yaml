@@ -4,9 +4,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: rustic-migrate
+  name: rusticate-migrate
   labels:
-    app.kubernetes.io/name: rustic
+    app.kubernetes.io/name: rusticate
     app.kubernetes.io/component: migrate
 spec:
   backoffLimit: 0
@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: rustic
+        app.kubernetes.io/name: rusticate
         app.kubernetes.io/component: migrate
     spec:
       restartPolicy: Never
@@ -25,11 +25,11 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: rustic-api:latest # pinned by digest in your release pipeline
+          image: rusticate-api:latest # pinned by digest in your release pipeline
           args: ["migrate"]
           envFrom:
             - secretRef:
-                name: rustic-api # needs APP_MIGRATION_DATABASE_URL (app_owner)
+                name: rusticate-api # needs APP_MIGRATION_DATABASE_URL (app_owner)
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

@@ -1,4 +1,4 @@
-# rustic
+# rusticate
 
 A production boilerplate for multi-tenant Rust backends. You get the standard, the reference implementation and the enforcement together:
 

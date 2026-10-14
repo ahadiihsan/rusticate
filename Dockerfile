@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # =============================================================================
 # One Dockerfile, one image per binary (OPS-006):
-#   docker build --target api    -t rustic-api .
-#   docker build --target worker -t rustic-worker .
+#   docker build --target api    -t rusticate-api .
+#   docker build --target worker -t rusticate-worker .
 #
 # * cargo-chef caches the dependency build: code-only changes rebuild in
 #   seconds, not minutes.

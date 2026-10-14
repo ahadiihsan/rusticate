@@ -34,7 +34,7 @@ Keywords follow RFC 2119: **MUST** means a violation fails CI or review; **SHOUL
 ## 1. Workspace topology (ARCH)
 
 ```text
-rustic/
+rusticate/
 ├── Cargo.toml              workspace: shared dependency versions, lints, profiles
 ├── architecture.toml       machine-readable tiers, allowlists, capabilities (enforced by `cargo xtask arch`)
 ├── clippy.toml / deny.toml / rustfmt.toml / rust-toolchain.toml / .squawk.toml

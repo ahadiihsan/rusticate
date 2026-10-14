@@ -34,9 +34,9 @@ pub fn reset() -> Result<()> {
             "-v",
             "ON_ERROR_STOP=1",
             "-c",
-            "DROP DATABASE IF EXISTS rustic WITH (FORCE)",
+            "DROP DATABASE IF EXISTS rusticate WITH (FORCE)",
             "-c",
-            "CREATE DATABASE rustic OWNER app_owner",
+            "CREATE DATABASE rusticate OWNER app_owner",
         ],
     ))?;
     migrate()

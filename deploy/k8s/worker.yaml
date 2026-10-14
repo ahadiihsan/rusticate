@@ -3,9 +3,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rustic-worker
+  name: rusticate-worker
   labels:
-    app.kubernetes.io/name: rustic
+    app.kubernetes.io/name: rusticate
     app.kubernetes.io/component: worker
 spec:
   replicas: 2
@@ -17,12 +17,12 @@ spec:
       maxSurge: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: rustic
+      app.kubernetes.io/name: rusticate
       app.kubernetes.io/component: worker
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: rustic
+        app.kubernetes.io/name: rusticate
         app.kubernetes.io/component: worker
     spec:
       terminationGracePeriodSeconds: 60
@@ -33,13 +33,13 @@ spec:
           type: RuntimeDefault
       containers:
         - name: worker
-          image: rustic-worker:latest # pinned by digest in your release pipeline
+          image: rusticate-worker:latest # pinned by digest in your release pipeline
           ports:
             - name: health
               containerPort: 8081
           envFrom:
             - secretRef:
-                name: rustic-worker # APP_DATABASE__URL (app_rw), APP_SYSTEM_DATABASE__URL (app_system), APP_NATS__URL
+                name: rusticate-worker # APP_DATABASE__URL (app_rw), APP_SYSTEM_DATABASE__URL (app_system), APP_NATS__URL
           env:
             - name: APP_NATS__STREAM_REPLICAS
               value: "3"
@@ -66,10 +66,10 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: rustic-worker
+  name: rusticate-worker
 spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: rustic
+      app.kubernetes.io/name: rusticate
       app.kubernetes.io/component: worker

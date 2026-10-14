@@ -29,4 +29,4 @@ ALTER ROLE app_system SET statement_timeout = '30s';
 ALTER ROLE app_system SET lock_timeout = '5s';
 ALTER ROLE app_system SET idle_in_transaction_session_timeout = '60s';
 
-CREATE DATABASE rustic OWNER app_owner;
+CREATE DATABASE rusticate OWNER app_owner;

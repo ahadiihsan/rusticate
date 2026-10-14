@@ -8,7 +8,7 @@ use utoipa::{Modify, OpenApi};
 #[derive(Debug, OpenApi)]
 #[openapi(
     info(
-        title = "Rustic Product API",
+        title = "Rusticate Product API",
         description = "Multi-tenant product API. Every error is RFC 9457 `application/problem+json`.",
         license(name = "Proprietary"),
     ),
