@@ -29,6 +29,17 @@ Builds are offline (`SQLX_OFFLINE=true`): compiling never needs a database. A ne
 3. `.sqlx/` and `apps/api/openapi.json` are regenerated if queries or the API changed, and you have read the diff.
 4. You did not weaken a guardrail (see "Never").
 
+## Shipping a change
+
+`main` accepts no direct or force pushes ([ruleset](.github/rulesets/main.json)). Every change lands as a squash-merged pull request, after CI and CodeQL pass:
+
+```sh
+git switch -c <type>/<topic>      # e.g. feat/void-invoice
+git push -u origin HEAD
+gh pr create --fill               # the PR title becomes the commit: `<type>: <description>`
+gh pr merge --auto --squash       # merges itself once the checks are green
+```
+
 ## Workflow: requirement → code
 
 1. **Classify.**
