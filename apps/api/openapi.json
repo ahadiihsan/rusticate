@@ -958,7 +958,7 @@
               "null"
             ],
             "description": "URI reference of this occurrence: the request path.",
-            "example": "/v1/invoices"
+            "example": "/v1/orders"
           },
           "request_id": {
             "type": [

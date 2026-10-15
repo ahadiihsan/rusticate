@@ -70,6 +70,8 @@ cargo rusticate verify       # fmt, architecture, lint, tests
 cargo rusticate run api      # http://localhost:8080/docs
 ```
 
+A debug build of this stack takes a few GB in `target/`. With several projects, share one build cache so dependencies compile once: `build.target-dir = "/path/to/shared-target"` in `~/.cargo/config.toml`.
+
 <!-- rusticate:module(messaging):start -->
 ```sh
 cargo rusticate run worker   # second terminal: outbox relay + consumers

@@ -125,7 +125,8 @@ gh api -X PATCH $R -F allow_squash_merge=true -F allow_merge_commit=false \
 gh api -X PUT $R/actions/permissions -F enabled=true -f allowed_actions=selected
 gh api -X PUT $R/actions/permissions/selected-actions --input - <<'JSON'
 {"github_owned_allowed": true, "verified_allowed": true,
- "patterns_allowed": ["Swatinem/rust-cache@*", "taiki-e/install-action@*"]}
+ "patterns_allowed": ["Swatinem/rust-cache@*", "taiki-e/install-action@*",
+                      "rust-lang/crates-io-auth-action@*"]}
 JSON
 gh api -X PUT $R/actions/permissions/workflow -f default_workflow_permissions=read \
   -F can_approve_pull_request_reviews=false
