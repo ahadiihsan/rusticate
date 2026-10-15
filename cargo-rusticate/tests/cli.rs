@@ -816,3 +816,122 @@ fn a_marker_naming_an_unknown_module_aborts_generation() {
     );
     assert!(!work.path().join("svc").exists());
 }
+
+const AUTHOR: [&str; 8] = [
+    "-c",
+    "user.name=T",
+    "-c",
+    "user.email=t@example.com",
+    "-c",
+    "commit.gpgsign=false",
+    "-c",
+    "tag.gpgsign=false",
+];
+
+fn commit_all(dir: &Path, message: &str) {
+    git(dir, &["add", "-A"]);
+    git(
+        dir,
+        &[&AUTHOR[..], &["commit", "--quiet", "-m", message]].concat(),
+    );
+}
+
+#[test]
+fn upgrade_merges_template_changes_with_local_ones() {
+    let template = Scratch::new("upgrade-template");
+    fake_template(template.path());
+    write(
+        template.path(),
+        "xtask/Cargo.toml",
+        "[package]\nname = \"xtask\"\n",
+    );
+    write(template.path(), "xtask/notes.md", "one\ntwo\nthree\n");
+    write(template.path(), "src/product.rs", "product v1\n");
+    commit_all(template.path(), "v1");
+    git(
+        template.path(),
+        &[&AUTHOR[..], &["tag", "-a", "v1", "-m", "v1"]].concat(),
+    );
+    let url = format!("file://{}", template.path().display());
+
+    let work = Scratch::new("upgrade-work");
+    let generated = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--owner",
+            "acme",
+            "--template",
+            &url,
+            "--ref",
+            "v1",
+        ],
+    );
+    assert_ok(&generated);
+    let project = work.path().join("svc");
+    commit_all(&project, "generated");
+    write(&project, "xtask/notes.md", "ONE (mine)\ntwo\nthree\n");
+    commit_all(&project, "local change");
+
+    write(
+        template.path(),
+        "xtask/notes.md",
+        "one\ntwo\nTHREE (template)\n",
+    );
+    write(template.path(), "xtask/added.md", "new tool\n");
+    write(template.path(), "src/product.rs", "product v2\n");
+    commit_all(template.path(), "v2");
+    git(
+        template.path(),
+        &[&AUTHOR[..], &["tag", "-a", "v2", "-m", "v2"]].concat(),
+    );
+
+    let out = rusticate(&project, &["upgrade", "--to", "v2"]);
+
+    assert_ok(&out);
+    assert_eq!(
+        read(&project, "xtask/notes.md"),
+        "ONE (mine)\ntwo\nTHREE (template)\n"
+    );
+    assert_eq!(read(&project, "xtask/added.md"), "new tool\n");
+    assert_eq!(
+        read(&project, "src/product.rs"),
+        "product v1\n",
+        "product code is untouched"
+    );
+    assert!(read(&project, "rusticate.toml").contains("revision = \"v2\""));
+    assert!(
+        stdout(&out).contains("1 added") && stdout(&out).contains("1 merged"),
+        "{}",
+        stdout(&out)
+    );
+}
+
+#[test]
+fn upgrade_refuses_a_dirty_working_tree() {
+    let template = Scratch::new("dirty-template");
+    fake_template(template.path());
+    write(
+        template.path(),
+        "xtask/Cargo.toml",
+        "[package]\nname = \"xtask\"\n",
+    );
+    commit_all(template.path(), "v1");
+    git(
+        template.path(),
+        &[&AUTHOR[..], &["tag", "-a", "v1", "-m", "v1"]].concat(),
+    );
+    let url = format!("file://{}", template.path().display());
+    let work = Scratch::new("dirty-work");
+    assert_ok(&rusticate(
+        work.path(),
+        &["new", "svc", "--template", &url, "--ref", "v1"],
+    ));
+    let project = work.path().join("svc");
+
+    let out = rusticate(&project, &["upgrade", "--to", "v1"]);
+
+    assert!(!out.status.success());
+    assert!(stderr(&out).contains("commit or stash"), "{}", stderr(&out));
+}

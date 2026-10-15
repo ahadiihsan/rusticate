@@ -75,6 +75,15 @@ cargo rusticate --help                  # lists every project command
 
 The commands are not built into this tool. They live in each project's `xtask/`, versioned with its code and CI, so a project keeps the rules it was generated with whatever version of `cargo-rusticate` is installed. `cargo xtask <command>` runs the same command without this tool (CI and the git hooks use it).
 
+## Upgrading a project
+
+```sh
+cargo rusticate upgrade            # to this generator's template release
+cargo rusticate upgrade --to main  # or any tag or branch
+```
+
+Merges the newer template's tooling and agent harness (xtask, scaffolds, skills, CI, docs, lint configs) into the project, keeping your changes: files you did not touch are replaced, files both sides changed are merged, and real conflicts are left as git conflict markers. Product code is never touched. It needs a clean working tree and the project's `rusticate.toml` (projects generated with 0.3.1 or later). See [ADR 0003](https://github.com/ahadiihsan/rusticate/blob/main/docs/adr/0003-upgrade-tooling-by-three-way-merge.md).
+
 ## What the generator does
 
 1. Fetches the template at the release matching its own version (`cargo-rusticate 0.1.0` → tag `v0.1.0`), so a given generator always produces the same project.

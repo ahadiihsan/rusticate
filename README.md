@@ -89,6 +89,8 @@ curl -s -X POST localhost:8080/v1/invoices -H "authorization: Bearer $TOKEN" \
 ```
 
 <!-- rusticate:module(example):end -->
+Newer template releases improve the tooling (checks, scaffolds, skills, CI). `cargo rusticate upgrade` merges them into this project with your changes kept; `rusticate.toml` records the version it came from.
+
 ## Build something
 
 ```sh

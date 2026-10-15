@@ -17,7 +17,7 @@ use anyhow::{Context as _, Result};
 const SCAFFOLD_KINDS: [&str; 3] = ["domain", "feature", "migration"];
 
 /// Commands this binary answers itself.
-const GENERATOR_COMMANDS: [&str; 3] = ["new", "init", "help"];
+const GENERATOR_COMMANDS: [&str; 4] = ["new", "init", "upgrade", "help"];
 
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) enum Route {
@@ -44,7 +44,7 @@ pub(crate) fn find_root(dir: &Path) -> Option<PathBuf> {
 pub(crate) fn route(args: &[OsString], in_project: bool) -> Route {
     let word = |at: usize| args.get(at).and_then(|arg| arg.to_str());
     match word(0) {
-        Some("-V" | "--version" | "init") => Route::Generator,
+        Some("-V" | "--version" | "init" | "upgrade") => Route::Generator,
         Some("new") => {
             // Inside a project, `new` alone or with a flag (`new --help`)
             // means scaffolding too; only a project name creates a project.
@@ -132,6 +132,8 @@ mod tests {
             (&["new", "my-service"], true),
             (&["new", "domain"], false),
             (&["init"], true),
+            (&["upgrade"], true),
+            (&["upgrade", "--to", "v9"], true),
             (&["init", "--owner", "acme"], false),
             (&["--version"], true),
             (&["-V"], false),
