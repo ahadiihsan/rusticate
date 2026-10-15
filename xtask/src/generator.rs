@@ -91,9 +91,9 @@ const COMBINATIONS: [(&str, &[&str]); 4] = [
 /// runs what a user runs first: proof that every project users can get
 /// builds, lints and passes the architecture check.
 ///
-/// The core project also runs its tests (they need no database) and builds
-/// freshly scaffolded features: its scaffold templates are exercised nowhere
-/// else.
+/// The core project also runs its tests and builds freshly scaffolded
+/// features (its scaffold templates are exercised nowhere else); the
+/// smaller database projects run their tests against the local services.
 pub fn smoke() -> Result<()> {
     let target = workspace::root().join("target");
     let out = target.join("generator-smoke");
@@ -124,6 +124,11 @@ pub fn smoke() -> Result<()> {
         };
         in_project(&["xtask", "openapi"])?;
         in_project(&["xtask", "verify", "--fast"])?;
+        // The full project's tests are the template's own; the smaller
+        // database projects run theirs against the same local services.
+        if name == "postgres" || name == "bare" {
+            in_project(&["xtask", "test"])?;
+        }
         if name == "core" {
             in_project(&["xtask", "test"])?;
             in_project(&["xtask", "new", "domain", "smoke"])?;

@@ -21,7 +21,7 @@ pub struct ProblemDetails {
     pub detail: String,
     /// URI reference of this occurrence: the request path.
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[schema(example = "/v1/invoices")]
+    #[schema(example = "/v1/orders")]
     pub instance: Option<String>,
     /// Stable machine-readable code. Clients branch on this, never on `detail`.
     #[schema(example = "VALIDATION_FAILED")]

@@ -36,7 +36,7 @@ If the workflow cannot run, publish from a clean checkout of the tag with `cargo
 
 ## The crates.io token
 
-The workflow reads the repository secret `CARGO_REGISTRY_TOKEN`. Give the token the narrowest scope crates.io offers: `publish-update` for the crate `cargo-rusticate` (the very first release also needs `publish-new`), with an expiry. Once the crate exists, crates.io [trusted publishing](https://crates.io/docs/trusted-publishing) can replace the secret with short-lived tokens issued to this workflow.
+The workflow publishes with crates.io [trusted publishing](https://crates.io/docs/trusted-publishing): GitHub issues it a short-lived token per run, so no long-lived token is stored. It is configured once on crates.io (crate settings → Trusted Publishing: repository `ahadiihsan/rusticate`, workflow `release.yml`). The rust-lang auth action must be allowed in the repository's Actions settings (see `docs/operations.md`).
 
 ## Release tags are protected
 

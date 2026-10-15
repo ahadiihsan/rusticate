@@ -7,7 +7,7 @@ use std::fmt;
 ///
 /// ```
 /// use op_context::Permission;
-/// pub const INVOICE_ISSUE: Permission = Permission::new("billing.invoice.issue");
+/// pub const ORDER_PLACE: Permission = Permission::new("orders.order.place");
 /// ```
 ///
 /// There is deliberately no implicit "admin can do anything" permission: roles
@@ -38,9 +38,9 @@ mod tests {
 
     #[test]
     fn displays_its_name() {
-        const ISSUE: Permission = Permission::new("billing.invoice.issue");
+        const ISSUE: Permission = Permission::new("orders.order.place");
 
-        assert_eq!(ISSUE.to_string(), "billing.invoice.issue");
-        assert_eq!(ISSUE.as_str(), "billing.invoice.issue");
+        assert_eq!(ISSUE.to_string(), "orders.order.place");
+        assert_eq!(ISSUE.as_str(), "orders.order.place");
     }
 }
