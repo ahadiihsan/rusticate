@@ -23,11 +23,17 @@
 # [security] also reviews iam.
 /crates/foundation/            @ahadiihsan
 /crates/domains/iam/           @ahadiihsan
+# rusticate:module(postgres):start
 /docker/                       @ahadiihsan
 
 # [database-reviewers] Every migration needs a database-literate reviewer.
 **/migrations/                 @ahadiihsan
+# rusticate:module(postgres):end
 
-# [billing] Bounded contexts are owned by their product teams.
+# Bounded contexts are owned by their product teams, e.g.
+# /crates/domains/<context>/       @org/<team>
+# /crates/domains/<context>-engine/ @org/<team>
+# rusticate:module(example):start
 /crates/domains/billing/       @ahadiihsan
 /crates/domains/billing-engine/ @ahadiihsan
+# rusticate:module(example):end

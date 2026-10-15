@@ -672,3 +672,141 @@ fn new_ignores_os_clutter_in_an_existing_destination() {
         "# svc agents\n"
     );
 }
+
+/// A fake template with two modules: `db` (owns `db/`, a block in
+/// `src/main.rs`, and a stand-in `nodb.txt`) and `queue` (needs `db`).
+fn modular_template(root: &Path) {
+    fake_template(root);
+    write(
+        root,
+        "template.toml",
+        "template_only = [\"tools/release.sh\"]\n\n\
+         [[module]]\nname = \"db\"\nsummary = \"a database\"\npaths = [\"db\"]\nabsent_paths = [\"nodb.txt\"]\n\n\
+         [[module]]\nname = \"queue\"\nsummary = \"a queue\"\nrequires = [\"db\"]\npaths = [\"queue.txt\"]\n",
+    );
+    write(root, "db/schema.sql", "-- rusticate tables\n");
+    write(root, "nodb.txt", "no database\n");
+    write(root, "queue.txt", "queue\n");
+    write(root, "tools/release.sh", "release rusticate\n");
+    write(
+        root,
+        "src/main.rs",
+        "fn main() {\n    // rusticate:module(db):start\n    db();\n    // rusticate:module(db):end\n    \
+         // rusticate:module(queue):start\n    queue();\n    // rusticate:module(queue):end\n}\n",
+    );
+    git(root, &["add", "-A"]);
+}
+
+fn generate(template: &Path, work: &Path, extra: &[&str]) -> Output {
+    let tpl = template.to_str().unwrap();
+    let mut args = vec![
+        "new",
+        "svc",
+        "--owner",
+        "acme",
+        "--no-git",
+        "--template",
+        tpl,
+    ];
+    args.extend_from_slice(extra);
+    rusticate(work, &args)
+}
+
+#[test]
+fn without_flags_every_module_is_included_and_markers_are_removed() {
+    let template = Scratch::new("template");
+    modular_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = generate(template.path(), work.path(), &[]);
+
+    assert_ok(&out);
+    let project = work.path().join("svc");
+    assert_eq!(
+        read(&project, "src/main.rs"),
+        "fn main() {\n    db();\n    queue();\n}\n"
+    );
+    assert_eq!(read(&project, "db/schema.sql"), "-- svc tables\n");
+    assert!(project.join("queue.txt").exists());
+    assert!(
+        !project.join("nodb.txt").exists(),
+        "stand-ins go when their module is in"
+    );
+    assert!(
+        !project.join("tools/release.sh").exists(),
+        "template-only paths never ship"
+    );
+    assert!(!project.join("template.toml").exists());
+    assert!(
+        stdout(&out).contains("core + db + queue"),
+        "{}",
+        stdout(&out)
+    );
+}
+
+#[test]
+fn minimal_keeps_only_core_and_the_stand_ins() {
+    let template = Scratch::new("template");
+    modular_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = generate(template.path(), work.path(), &["--minimal"]);
+
+    assert_ok(&out);
+    let project = work.path().join("svc");
+    assert_eq!(read(&project, "src/main.rs"), "fn main() {\n}\n");
+    assert!(!project.join("db").exists());
+    assert!(!project.join("queue.txt").exists());
+    assert_eq!(read(&project, "nodb.txt"), "no database\n");
+    assert!(stdout(&out).contains("core only"), "{}", stdout(&out));
+}
+
+#[test]
+fn without_drops_dependents_and_unmet_requirements_are_refused() {
+    let template = Scratch::new("template");
+    modular_template(template.path());
+    let work = Scratch::new("work");
+
+    let out = generate(template.path(), work.path(), &["--without", "db"]);
+    assert_ok(&out);
+    assert!(
+        !work.path().join("svc/queue.txt").exists(),
+        "queue needs db"
+    );
+
+    let elsewhere = Scratch::new("elsewhere");
+    let refused = generate(
+        template.path(),
+        elsewhere.path(),
+        &["--minimal", "--with", "queue"],
+    );
+    assert!(!refused.status.success());
+    assert!(
+        stderr(&refused).contains("`queue` needs `db`"),
+        "{}",
+        stderr(&refused)
+    );
+}
+
+#[test]
+fn a_marker_naming_an_unknown_module_aborts_generation() {
+    let template = Scratch::new("template");
+    modular_template(template.path());
+    write(
+        template.path(),
+        "src/lib.rs",
+        "// rusticate:module(dbb):start\nfn typo() {}\n// rusticate:module(dbb):end\n",
+    );
+    git(template.path(), &["add", "-A"]);
+    let work = Scratch::new("work");
+
+    let out = generate(template.path(), work.path(), &[]);
+
+    assert!(!out.status.success());
+    let err = stderr(&out);
+    assert!(
+        err.contains("src/lib.rs: line 1") && err.contains("unknown module `dbb`"),
+        "{err}"
+    );
+    assert!(!work.path().join("svc").exists());
+}

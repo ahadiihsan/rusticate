@@ -21,19 +21,22 @@ A new context changes the context map, so it **needs an ADR** in [`docs/adr/`](.
 
 ```sh
 cargo rusticate new domain shipping
-cargo rusticate db migrate
 ```
 
 This generates:
 
-- `crates/domains/shipping/`
-  - `Cargo.toml`, and `sqlx.toml` (schema `shipping`, its own migration table)
-  - `migrations/<ts>_shipping_init.sql`
-  - `src/lib.rs` (`router()`, `MIGRATOR`, `xtask:` markers), `error.rs`, `permissions.rs`, `events.rs`
-  - `tests/integration/` (one binary, with a schema-guard test)
+- `crates/domains/shipping/`: `Cargo.toml`, `src/lib.rs` (`router()`, `xtask:` markers), `error.rs`, `permissions.rs`, and `tests/integration/` (one test binary)
 - `crates/domains/shipping-engine/` (allowlisted deps, a stricter `clippy.toml`, lint attributes)
 
-It also wires the context: workspace dependencies, the API's dependencies, `.merge(shipping::router())` and `MIGRATORS`.
+It also wires the context: workspace dependencies, the API's dependencies and `.merge(shipping::router())`.
+<!-- rusticate:module(postgres):start -->
+
+With PostgreSQL the context also owns a schema: `sqlx.toml` (schema `shipping`, its own migration table), `migrations/<ts>_shipping_init.sql`, a `MIGRATOR` registered in `MIGRATORS`, and a schema-guard test. Create the schema with `cargo rusticate db migrate`.
+<!-- rusticate:module(postgres):end -->
+<!-- rusticate:module(messaging):start -->
+
+With messaging it also gets `events.rs` for the events it publishes.
+<!-- rusticate:module(messaging):end -->
 
 Then:
 
@@ -46,9 +49,8 @@ Then:
 
 | Need | Do |
 |---|---|
-| React to something another context did | consume its events ([add-event-consumer](../add-event-consumer/SKILL.md)) |
-| Another context must react to you | publish events |
+| React to something another context did, or make others react to you | events, with messaging ([add-event-consumer](../add-event-consumer/SKILL.md)) |
 | Synchronous call into another context | avoid. If unavoidable, the callee must be a *shared* context (`[domains].shared` in `architecture.toml`), approved by ADR. `iam` is the only one today. |
 | Read another context's tables | never (DB-013); `cargo rusticate arch` rejects SQL that references another context's schema |
 
-A context must be mountable into any product binary: its router is generic over the host state, and its migrations live with it.
+A context must be mountable into any product binary: its router is generic over the host state, and its migrations (with PostgreSQL) live with it.

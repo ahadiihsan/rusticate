@@ -187,7 +187,6 @@ fn setup() -> Result<()> {
     sh::run(sh::cmd("git", ["config", "core.hooksPath", ".githooks"]))?;
     let mut missing = Vec::new();
     for (tool, install) in [
-        ("cargo-rusticate", "cargo install --locked cargo-rusticate"),
         ("cargo-nextest", "cargo install --locked cargo-nextest"),
         ("cargo-deny", "cargo install --locked cargo-deny"),
         ("cargo-llvm-cov", "cargo install --locked cargo-llvm-cov"),
@@ -204,6 +203,12 @@ fn setup() -> Result<()> {
         }
     }
     anyhow::ensure!(missing.is_empty(), "missing tools:\n{}", missing.join("\n"));
+    if !sh::available("cargo-rusticate") {
+        println!(
+            "tip: `cargo install --locked cargo-rusticate` lets you run every command as \
+             `cargo rusticate <command>` (`cargo xtask <command>` works without it)"
+        );
+    }
     // A project generated with fewer modules starts with the template's
     // formatting and contract; make both match this project.
     fmt(false)?;

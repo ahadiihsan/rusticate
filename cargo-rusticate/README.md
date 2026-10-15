@@ -21,8 +21,19 @@ Create a project in a new directory:
 ```sh
 cargo rusticate new my-service --owner acme
 cd my-service
-cargo rusticate setup && cargo rusticate db up && cargo rusticate verify
+cargo rusticate setup && cargo rusticate verify
 ```
+
+In a terminal the generator asks which optional modules to include; each one builds on the one before it:
+
+| Module | Adds | Needs |
+|---|---|---|
+| core (always) | HTTP API, auth, problem+json errors, telemetry, scaffolding, CI, agent harness | |
+| `postgres` | PostgreSQL with row-level security (multi-tenant), migrations, idempotency | |
+| `messaging` | NATS JetStream: worker, transactional outbox, event consumers | `postgres` |
+| `example` | the `billing` context, a complete reference | `postgres`, `messaging` |
+
+Without a terminal and without module flags, every module is included.
 
 Or fill the current directory: an empty folder, or a repository you already created and cloned. It may contain only `.git` (kept, remote included) and OS files such as `.DS_Store`:
 
@@ -36,9 +47,14 @@ cargo rusticate init --owner acme
 | `--owner <login>` | GitHub user or organisation that owns the repository. Written to `CODEOWNERS` and the `SECURITY.md` report link. Without it they say `OWNER`. |
 | `--path <dir>` | (`new`) Directory to create. Default: `./<name>`. |
 | `--name <name>` | (`init`) Project name. Default: the directory's name. |
-| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.2.1` for 0.2.1). `--ref main` gives the latest unreleased template. |
+| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.3.0` for 0.3.0). `--ref main` gives the latest unreleased template. |
 | `--template <url-or-dir>` | Another source: a fork's git URL, or a local checkout of the template. |
 | `--no-git` | Do not initialise a git repository. |
+| `--minimal` | Core only; add modules with `--with`. |
+| `--with <modules>` | Include these modules (comma-separated or repeated). |
+| `--without <modules>` | Leave these out, and every module that needs them. |
+| `--bare` | Everything but the example (same as `--without example`). |
+| `--all` | Every module, without asking. |
 
 Project names are lowercase letters, digits and single hyphens, starting with a letter (`my-service`): the name is used for Docker, Kubernetes and image names, which allow nothing else.
 
@@ -62,9 +78,10 @@ The commands are not built into this tool. They live in each project's `xtask/`,
 ## What the generator does
 
 1. Fetches the template at the release matching its own version (`cargo-rusticate 0.1.0` → tag `v0.1.0`), so a given generator always produces the same project.
-2. Renames the template's identity everywhere: `rusticate` → `my-service`, `Rusticate` → `My Service`, the repository URL and `@ahadiihsan` → your owner. Links into the template's history and the generator's own name are kept. Sections that only make sense in the template repository are removed.
-3. Refuses to finish if any other spelling of the template's identity remains, and leaves the directory as it found it.
-4. Starts a fresh git repository on `main` (no commit), unless the directory already had one or you passed `--no-git`.
+2. Keeps the modules you chose: the template declares them in `template.toml`, with the paths each owns and the blocks it marks in shared files. A Rust file that lost lines is formatted with `rustfmt`.
+3. Renames the template's identity everywhere: `rusticate` → `my-service`, `Rusticate` → `My Service`, the repository URL and `@ahadiihsan` → your owner. Links into the template's history and the generator's own name are kept. Sections that only make sense in the template repository are removed.
+4. Refuses to finish if any other spelling of the template's identity remains, or a marker is malformed or names an unknown module, and leaves the directory as it found it.
+5. Starts a fresh git repository on `main` (no commit), unless the directory already had one or you passed `--no-git`.
 
 The generated project keeps `LICENSE-MIT` and `LICENSE-APACHE`: they cover the code that came from the template. License your own code as you choose.
 

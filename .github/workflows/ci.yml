@@ -41,13 +41,15 @@ jobs:
         with:
           tool: cargo-nextest,cargo-deny,cargo-llvm-cov
 
+      # rusticate:module(postgres):start
       - name: Install sqlx-cli
         run: |
           command -v sqlx >/dev/null || cargo install sqlx-cli --version 0.9.0 \
             --no-default-features --features postgres,rustls,sqlx-toml
 
-      - name: Start Postgres and NATS
+      - name: Start local services
         run: cargo xtask db up
+      # rusticate:module(postgres):end
 
       - name: cargo xtask ci
         run: cargo xtask ci
@@ -76,6 +78,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Kept in every project (it is a required check); without migrations it
+      # has nothing to do.
       # DB-011: merged migrations are immutable. Fix forward with a new one.
       - name: Merged migrations are unchanged
         run: |
@@ -111,6 +115,7 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # rusticate:module(messaging):start
       - name: Build worker
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -118,3 +123,4 @@ jobs:
           target: worker
           push: false
           cache-from: type=gha
+      # rusticate:module(messaging):end

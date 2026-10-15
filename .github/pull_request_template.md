@@ -10,13 +10,18 @@
 
 `cargo xtask verify` passed locally, and CI is green. CI enforces these items too; the list is for the reviewer.
 
-- [ ] Feature slices follow `<feature>.rs` / `http.rs` / `db.rs` (ARCH-004); no `SCAFFOLD:` markers remain
+- [ ] Feature slices follow `<feature>.rs` / `http.rs` (and `db.rs` with a database) (ARCH-004); no `SCAFFOLD:` markers remain
 - [ ] Every workflow checks its permission first and takes `ctx: &OpCtx` (SEC-003)
 - [ ] Integration tests cover the happy path, each failure mode, **tenant isolation**, and idempotent replay where applicable (TEST-002/005)
 - [ ] New business rules live in the engine with property tests against an independent oracle (ENG-005)
+- [ ] `apps/api/openapi.json` regenerated and the diff reviewed (API-004)
+<!-- rusticate:module(postgres):start -->
 - [ ] Migrations follow the tenant-table template; no edits to merged migrations (DB-004, DB-011)
-- [ ] `.sqlx/` and `apps/api/openapi.json` regenerated and the diff reviewed (DB-010, API-004)
+- [ ] Each changed crate's `.sqlx/` regenerated and the diff reviewed (DB-010)
+<!-- rusticate:module(postgres):end -->
+<!-- rusticate:module(messaging):start -->
 - [ ] Events are new versions, not edits of published ones, and carry no personal data (MSG-003/006)
+<!-- rusticate:module(messaging):end -->
 - [ ] No `#[allow]`; every `#[expect]` has a reason (LINT-002)
 
 ## Rollout

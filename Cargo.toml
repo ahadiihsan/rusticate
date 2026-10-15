@@ -118,8 +118,8 @@ figment = { version = "0.10.19", features = ["env", "toml"] }
 mimalloc = "0.1.52"
 
 # ---- Testing ----------------------------------------------------------------
-# rusticate:module(example):start
 proptest = "1.12"
+# rusticate:module(example):start
 rust_decimal = "1.43" # test oracle only — production money math is integer-based
 # rusticate:module(example):end
 

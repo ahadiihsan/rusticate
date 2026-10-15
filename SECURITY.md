@@ -18,6 +18,12 @@ Only the latest commit on `main` is supported. There are no maintained release b
 
 ## Scope
 
-In scope: the code in this repository, including the tenant isolation guarantees (row-level security, `TenantTx`), authentication (`iam`), the idempotency and outbox machinery, and the container images built from the `Dockerfile`.
+In scope: the code in this repository, including authentication and authorization (`iam`, `OpCtx` permissions) and the container images built from the `Dockerfile`.
+<!-- rusticate:module(postgres):start -->
+Also the tenant isolation guarantees (row-level security, `TenantTx`) and the idempotency machinery.
+<!-- rusticate:module(postgres):end -->
+<!-- rusticate:module(messaging):start -->
+Also the outbox and event consumers.
+<!-- rusticate:module(messaging):end -->
 
 Out of scope: the local development defaults in `xtask/src/dev_env.rs` and `docker-compose.yml` (they are intentionally insecure and never used outside a developer machine), and vulnerabilities in dependencies that are already tracked by a RustSec advisory (`cargo deny` blocks them in CI).
