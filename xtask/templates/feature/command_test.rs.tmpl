@@ -36,4 +36,7 @@ async fn {{feature}}_replays_retries(pool: PgPoolOptions, conn: PgConnectOptions
 
     assert_eq!(first, retry);
     // SCAFFOLD: assert the effects, every failure mode, and tenant isolation.
+    // For a version-guarded update, prove exactly one of two concurrent
+    // writers wins: `let (a, b) = tokio::join!(update(..v1..), update(..v1..));`
+    // then assert one `Ok` and one `StaleVersion`.
 }

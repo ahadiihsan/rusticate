@@ -1,8 +1,10 @@
 [alias]
 xtask = "run --quiet --package xtask --"
 
+# rusticate:module(postgres):start
 [env]
 # DB-010: builds are hermetic. `query!` macros type-check against the committed
 # `.sqlx/` metadata, never a live database. After adding or changing a query run
 # `cargo rusticate db prepare` (requires `cargo rusticate db up`).
 SQLX_OFFLINE = "true"
+# rusticate:module(postgres):end

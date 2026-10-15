@@ -11,6 +11,20 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 /// * Reading it requires the explicit, greppable [`Sensitive::expose`].
 /// * Serializes transparently: it is still stored and returned where the
 ///   contract requires it (API responses, database columns).
+///
+/// Wrap personal data inside the value object, so every type that carries it
+/// is safe to log:
+///
+/// ```
+/// use telemetry::Sensitive;
+///
+/// #[derive(Debug)]
+/// pub struct CustomerEmail(Sensitive<String>);
+///
+/// let email = CustomerEmail(Sensitive::new("ap@customer.example".to_owned()));
+/// assert_eq!(format!("{email:?}"), "CustomerEmail([REDACTED])");
+/// assert_eq!(email.0.expose(), "ap@customer.example"); // greppable, deliberate
+/// ```
 #[derive(Clone, PartialEq, Eq, Hash, Default)]
 pub struct Sensitive<T>(T);
 

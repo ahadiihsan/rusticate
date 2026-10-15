@@ -10,3 +10,13 @@ pub(super) async fn current_tenant(tx: &mut TenantTx) -> Result<uuid::Uuid, sqlx
         .fetch_one(tx.conn())
         .await
 }
+
+// Writing N rows is one statement (PERF-003), never N:
+//
+//     sqlx::query!(
+//         r#"INSERT INTO {{schema}}.<table> (tenant_id, id, position, amount)
+//            SELECT $1, * FROM UNNEST($2::uuid[], $3::int[], $4::bigint[])"#,
+//         tx.tenant_id().as_uuid(), &ids, &positions, &amounts,
+//     )
+//     .execute(tx.conn())
+//     .await?;

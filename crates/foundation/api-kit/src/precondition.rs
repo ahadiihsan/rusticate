@@ -4,6 +4,60 @@
 //! `ETag: "<version>"`. Updates must send `If-Match: "<version>"`; a stale
 //! version fails with 412 instead of silently overwriting someone else's
 //! change ("lost update"). Creation of a singleton uses `If-None-Match: *`.
+//!
+//! One create-or-update feature, end to end:
+//!
+//! ```
+//! use api_kit::{ApiError, Precondition, etag, precondition_failed, precondition_required};
+//! use axum::http::{HeaderValue, StatusCode, header};
+//! use axum::response::IntoResponse;
+//! use uuid::Uuid;
+//!
+//! /// What the command asks the workflow to do (part of the `*Cmd`).
+//! #[derive(Debug, PartialEq)]
+//! enum Expectation {
+//!     Create,
+//!     Update { version: i32 },
+//! }
+//!
+//! // HOP 1 (`http.rs`): the handler takes `precondition: Precondition` like
+//! // any extractor and turns it into the command's expectation.
+//! fn expectation(precondition: Precondition) -> Result<Expectation, ApiError> {
+//!     match precondition {
+//!         Precondition::IfNoneMatchAny => Ok(Expectation::Create),
+//!         Precondition::IfMatch(version) => Ok(Expectation::Update { version }),
+//!         Precondition::None => Err(precondition_required(
+//!             "Send `If-None-Match: *` to create, or `If-Match: <ETag>` to update.",
+//!         )),
+//!     }
+//! }
+//!
+//! // HOP 3 (`db.rs`): the update is guarded by the version and bumps it:
+//! //
+//! //     UPDATE <schema>.<table> SET ..., version = version + 1
+//! //     WHERE tenant_id = $1 AND id = $2 AND version = $3
+//! //     RETURNING version
+//! //
+//! // No row back means the version was stale. The workflow returns its
+//! // context error (e.g. `StaleVersion`), and `error.rs` maps it to 412:
+//! let stale: ApiError = precondition_failed("The resource changed; GET it for the current ETag.");
+//! assert_eq!(stale.into_response().status(), StatusCode::PRECONDITION_FAILED);
+//!
+//! // HOP 1 again: every response carries the new version as the ETag; a
+//! // create is a 201 with the new resource's Location.
+//! fn created(id: Uuid, version: i32) -> Result<impl IntoResponse, ApiError> {
+//!     let location = HeaderValue::from_str(&format!("/v1/things/{id}")).map_err(ApiError::internal)?;
+//!     Ok((StatusCode::CREATED, [(header::LOCATION, location), (header::ETAG, etag(version))]))
+//! }
+//!
+//! assert_eq!(expectation(Precondition::IfMatch(3))?, Expectation::Update { version: 3 });
+//! let missing = expectation(Precondition::None).unwrap_err().into_response();
+//! assert_eq!(missing.status(), StatusCode::PRECONDITION_REQUIRED);
+//! let response = created(Uuid::now_v7(), 1)?.into_response();
+//! assert_eq!(response.status(), StatusCode::CREATED);
+//! assert_eq!(response.headers()[header::ETAG], "\"1\"");
+//! # Ok::<(), ApiError>(())
+//! ```
 
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;

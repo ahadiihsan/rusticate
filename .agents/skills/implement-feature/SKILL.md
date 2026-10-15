@@ -11,6 +11,13 @@ The goal is a change that passes `cargo rusticate verify`. The shape is what `ca
 For a finished example of every step, read the [`billing`](../../../crates/domains/billing) context, starting with [`issue_invoice.rs`](../../../crates/domains/billing/src/issue_invoice.rs).
 <!-- rusticate:module(example):end -->
 
+Compiled, tested usage examples of the platform APIs (read the one you are about to use):
+
+- keyset pagination: `crates/foundation/api-kit/src/pagination.rs` (module docs);
+- `ETag` / `If-Match` / 201 + `Location`: `crates/foundation/api-kit/src/precondition.rs`;
+- value objects and all-violations-at-once validation: `ApiError::validation_many` in `crates/foundation/api-kit/src/error.rs`;
+- personal data: `Sensitive` in `crates/foundation/telemetry/src/sensitive.rs`.
+
 ## 1. Classify before writing code
 
 Answer these in your notes or PR description:

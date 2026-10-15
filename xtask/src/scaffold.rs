@@ -4,14 +4,23 @@
 //!
 //! Existing files are edited only at explicit `xtask:<name>` marker comments.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
+// rusticate:module(postgres):start
+use std::path::PathBuf;
+// rusticate:module(postgres):end
 
-use anyhow::{Context as _, Result, bail, ensure};
+// rusticate:module(postgres):start
+use anyhow::bail;
+// rusticate:module(postgres):end
+use anyhow::{Context as _, Result, ensure};
 use clap::ValueEnum;
 use regex::Regex;
 
 use crate::sh;
-use crate::workspace::{Workspace, owned_schema, root};
+// rusticate:module(postgres):start
+use crate::workspace::owned_schema;
+// rusticate:module(postgres):end
+use crate::workspace::{Workspace, root};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum FeatureKind {
@@ -516,6 +525,7 @@ fn wire_feature(
     Ok(())
 }
 
+// rusticate:module(postgres):start
 /// `cargo rusticate new migration <domain> <description>`. Returns the new path.
 pub fn migration(domain: &str, description: &str) -> Result<PathBuf> {
     let workspace = Workspace::load()?;
@@ -549,6 +559,7 @@ pub fn migration(domain: &str, description: &str) -> Result<PathBuf> {
     );
     Ok(path)
 }
+// rusticate:module(postgres):end
 
 #[cfg(test)]
 mod tests {

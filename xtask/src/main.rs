@@ -135,8 +135,10 @@ enum NewWhat {
         #[arg(long, value_enum, default_value_t = scaffold::FeatureKind::Command)]
         kind: scaffold::FeatureKind,
     },
+    // rusticate:module(postgres):start
     /// A timestamped migration in a context's schema.
     Migration { domain: String, description: String },
+    // rusticate:module(postgres):end
 }
 
 fn main() {
@@ -169,10 +171,12 @@ fn run(cli: Cli) -> Result<()> {
         Command::New { what } => match what {
             NewWhat::Domain { name } => scaffold::domain(&name),
             NewWhat::Feature { domain, name, kind } => scaffold::feature(&domain, &name, kind),
+            // rusticate:module(postgres):start
             NewWhat::Migration {
                 domain,
                 description,
             } => scaffold::migration(&domain, &description).map(|_| ()),
+            // rusticate:module(postgres):end
         },
         Command::Token {
             tenant,
@@ -289,6 +293,13 @@ fn coverage(fail_under: u8) -> Result<()> {
     sh::run(sh::cargo(["llvm-cov", "report", "--summary-only"]))
 }
 
+/// The usage examples in the API docs compile and run (nextest skips them).
+fn doc_tests() -> Result<()> {
+    let mut cmd = sh::cargo(["test", "--doc", "--workspace", "--all-features", "--locked"]);
+    dev_env::apply(&mut cmd);
+    sh::run(cmd)
+}
+
 fn docs() -> Result<()> {
     let mut cmd = sh::cargo([
         "doc",
@@ -320,6 +331,7 @@ fn verify(fast: bool) -> Result<()> {
     sh::step("query metadata", || db::prepare(true))?;
     // rusticate:module(postgres):end
     sh::step("tests", || test(&[], false))?;
+    sh::step("doc examples", doc_tests)?;
     println!("\n✓ verify passed");
     Ok(())
 }
@@ -338,6 +350,7 @@ fn ci() -> Result<()> {
     sh::step("query metadata", || db::prepare(true))?;
     // rusticate:module(postgres):end
     sh::step("tests", || test(&[], true))?;
+    sh::step("doc examples", doc_tests)?;
     // rusticate:template-only:start
     if generator::present() {
         sh::step("generator (cargo-rusticate)", generator::check)?;
@@ -362,7 +375,8 @@ fn openapi(check: bool) -> Result<()> {
         let committed = std::fs::read_to_string(&path)?;
         anyhow::ensure!(
             committed == generated,
-            "apps/api/openapi.json is stale: run `cargo rusticate openapi` and review the contract diff"
+            "apps/api/openapi.json is stale: run `cargo rusticate openapi` and review the contract diff \
+             (in a newly generated project, `cargo rusticate setup` does it)"
         );
         println!("✓ OpenAPI contract is up to date");
     } else {

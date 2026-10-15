@@ -4,8 +4,46 @@
 //! repeats rows under concurrent inserts. Lists page by the last seen `UUIDv7`
 //! id (time-ordered), carried to the client as an opaque cursor.
 //!
-//! ```text
-//! SELECT ... WHERE ($after::uuid IS NULL OR id < $after) ORDER BY id DESC LIMIT $fetch_limit
+//! One list feature, end to end:
+//!
+//! ```
+//! use api_kit::pagination::{PageParams, PageRequest};
+//! use uuid::Uuid;
+//!
+//! // HOP 1 (`http.rs`): parse the query string. A bad limit or cursor is a 400.
+//! let page = PageRequest::try_from(PageParams { limit: Some(2), cursor: None })?;
+//!
+//! // HOP 3 (`db.rs`): one query per filter shape, never `($n IS NULL OR ...)`
+//! // (PERF-005: a cached generic plan cannot drop the OR and stops using the
+//! // index). The first page is bounded by the maximum id, so `id < $2` is
+//! // always an index range:
+//! //
+//! //     SELECT ... FROM <schema>.<table>
+//! //     WHERE tenant_id = $1 AND id < $2
+//! //     ORDER BY id DESC
+//! //     LIMIT $3
+//! //
+//! // bound to `tx.tenant_id()`, `page.after().unwrap_or(Uuid::max())` and
+//! // `page.fetch_limit()` (the page size plus one).
+//! let rows = newest_first(page.after().unwrap_or(Uuid::max()), page.fetch_limit());
+//!
+//! // HOP 2 (workflow): `paginate` drops the extra row and turns its presence
+//! // into the next cursor.
+//! let first = page.paginate(rows, |id| *id);
+//! assert_eq!(first.items.len(), 2);
+//!
+//! // The client passes `next_cursor` back as `cursor`; the last page has none.
+//! let cursor = first.next_cursor.clone();
+//! let page = PageRequest::try_from(PageParams { limit: Some(2), cursor })?;
+//! let second = page.paginate(newest_first(page.after().unwrap_or(Uuid::max()), page.fetch_limit()), |id| *id);
+//! assert_eq!(second.items.len(), 1);
+//! assert!(second.next_cursor.is_none());
+//! # fn newest_first(below: Uuid, limit: i64) -> Vec<Uuid> {
+//! #     let ids = [Uuid::from_u128(5), Uuid::from_u128(4), Uuid::from_u128(3)];
+//! #     let limit = usize::try_from(limit).unwrap();
+//! #     ids.into_iter().filter(|id| *id < below).take(limit).collect()
+//! # }
+//! # Ok::<(), api_kit::ApiError>(())
 //! ```
 
 use base64::Engine as _;
