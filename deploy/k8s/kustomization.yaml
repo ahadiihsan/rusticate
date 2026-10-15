@@ -1,5 +1,5 @@
 # Base manifests. Environments overlay replicas, image digests and secrets.
-# Deploy order: migrate-job (wait for completion) → api → worker.
+# Deploy order: listed order; wait for any Job to complete before rolling out the rest.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

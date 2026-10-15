@@ -65,6 +65,50 @@ impl ApiError {
     }
 
     /// 400 `VALIDATION_FAILED` for several fields.
+    ///
+    /// Parse, don't validate: a `*Request` DTO becomes a command of value
+    /// objects in one `TryFrom`, which reports **every** violation at once,
+    /// with JSON paths:
+    ///
+    /// ```
+    /// use api_kit::{ApiError, FieldViolation};
+    ///
+    /// /// A value object: constructed only through `parse`, so holding one
+    /// /// proves it is valid.
+    /// #[derive(Debug)]
+    /// pub struct Quantity(u32);
+    ///
+    /// impl Quantity {
+    ///     pub fn parse(raw: i64) -> Result<Self, &'static str> {
+    ///         u32::try_from(raw).ok().filter(|q| (1..=10_000).contains(q)).map(Self).ok_or("must be between 1 and 10000")
+    ///     }
+    /// }
+    ///
+    /// struct LineRequest { quantity: i64 }
+    /// struct OrderRequest { lines: Vec<LineRequest> }
+    /// struct OrderCmd { quantities: Vec<Quantity> }
+    ///
+    /// impl TryFrom<OrderRequest> for OrderCmd {
+    ///     type Error = ApiError;
+    ///
+    ///     fn try_from(request: OrderRequest) -> Result<Self, ApiError> {
+    ///         let mut violations = Vec::new();
+    ///         let mut quantities = Vec::new();
+    ///         for (i, line) in request.lines.iter().enumerate() {
+    ///             match Quantity::parse(line.quantity) {
+    ///                 Ok(quantity) => quantities.push(quantity),
+    ///                 Err(reason) => violations.push(FieldViolation::new(format!("lines[{i}].quantity"), reason)),
+    ///             }
+    ///         }
+    ///         if violations.is_empty() { Ok(Self { quantities }) } else { Err(ApiError::validation_many(violations)) }
+    ///     }
+    /// }
+    ///
+    /// let bad = OrderRequest { lines: vec![LineRequest { quantity: 0 }, LineRequest { quantity: 2 }, LineRequest { quantity: -1 }] };
+    /// let Err(ApiError::BadRequest { violations, .. }) = OrderCmd::try_from(bad) else { panic!("expected a 400") };
+    /// let fields: Vec<&str> = violations.iter().map(|v| v.field.as_str()).collect();
+    /// assert_eq!(fields, ["lines[0].quantity", "lines[2].quantity"]);
+    /// ```
     pub fn validation_many(violations: Vec<FieldViolation>) -> Self {
         Self::BadRequest {
             code: "VALIDATION_FAILED",
