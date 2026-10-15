@@ -19,7 +19,7 @@ The full analysis is in [v1-to-v2.md](../sop/v1-to-v2.md).
 
 1. The standard is [SOP v2](../sop/rust-backend-sop-v2.md). Every rule has an ID, a level and an enforcer.
 2. The `billing` context is the compiling, tested reference implementation. Documents link to it instead of embedding code.
-3. Machine-checkable rules are enforced by the compiler, clippy, `cargo rusticate arch` (from `architecture.toml`), the catalog schema guard, `cargo-deny`, squawk and the test suite. `cargo rusticate verify` is the definition of done locally and `cargo rusticate ci` in CI.
+3. Machine-checkable rules are enforced by the compiler, clippy, `cargo xtask arch` (from `architecture.toml`), the catalog schema guard, `cargo-deny`, squawk and the test suite. `cargo xtask verify` is the definition of done locally and `cargo xtask ci` in CI.
 4. Bounded contexts own their PostgreSQL schema and migration history (`sqlx.toml` per crate).
 5. Idempotency keys are claimed and completed in the business transaction.
 6. Money is `i64` minor units with an explicit currency, within the JSON-safe range.
