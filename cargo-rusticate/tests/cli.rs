@@ -317,6 +317,11 @@ fn init_refuses_a_directory_with_files_and_leaves_it_untouched() {
 
     assert!(!out.status.success());
     assert!(stderr(&out).contains("is not empty"), "{}", stderr(&out));
+    assert!(
+        stderr(&out).contains("`notes.txt`"),
+        "names what is in the way: {}",
+        stderr(&out)
+    );
     assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
     assert_eq!(read(dir.path(), "notes.txt"), "mine\n");
 }
@@ -340,7 +345,7 @@ fn new_refuses_a_non_empty_destination() {
 
     assert!(!out.status.success());
     assert!(
-        stderr(&out).contains("not an empty directory"),
+        stderr(&out).contains("is not empty (it contains `keep.txt`)"),
         "{}",
         stderr(&out)
     );
@@ -615,4 +620,55 @@ fn outside_a_project_a_project_command_is_explained() {
     let err = stderr(&out);
     assert!(err.contains("`db` is a project command"), "{err}");
     assert!(err.contains("cargo rusticate new <name>"), "{err}");
+}
+
+#[test]
+fn init_ignores_os_clutter_and_keeps_it() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let dir = Scratch::new("finder-opened");
+    write(dir.path(), ".DS_Store", "finder\n");
+
+    let out = rusticate(
+        dir.path(),
+        &[
+            "init",
+            "--name",
+            "svc",
+            "--owner",
+            "acme",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert_ok(&out);
+    assert_eq!(read(dir.path(), "AGENTS.md"), "# svc agents\n");
+    assert_eq!(read(dir.path(), ".DS_Store"), "finder\n");
+}
+
+#[test]
+fn new_ignores_os_clutter_in_an_existing_destination() {
+    let template = Scratch::new("template");
+    fake_template(template.path());
+    let work = Scratch::new("work");
+    write(work.path(), "svc/Thumbs.db", "explorer\n");
+
+    let out = rusticate(
+        work.path(),
+        &[
+            "new",
+            "svc",
+            "--owner",
+            "acme",
+            "--template",
+            template.path().to_str().unwrap(),
+        ],
+    );
+
+    assert_ok(&out);
+    assert_eq!(
+        read(&work.path().join("svc"), "AGENTS.md"),
+        "# svc agents\n"
+    );
 }

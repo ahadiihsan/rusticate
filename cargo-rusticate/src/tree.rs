@@ -21,22 +21,32 @@ pub(crate) fn entries(root: &Path) -> Result<Vec<Entry>> {
     Ok(found)
 }
 
-/// Whether `dir` holds nothing but the names in `allowed`.
-pub(crate) fn only_contains(dir: &Path, allowed: &[&str]) -> Result<bool> {
+/// Files operating systems drop into any folder a file manager opens. They
+/// never make a directory "not empty", and they are never removed.
+const OS_CLUTTER: [&str; 3] = [".DS_Store", "Thumbs.db", "desktop.ini"];
+
+/// The names in `dir` other than those in `allowed` and OS clutter, sorted.
+pub(crate) fn unexpected(dir: &Path, allowed: &[&str]) -> Result<Vec<String>> {
+    let mut found = Vec::new();
     for entry in fs::read_dir(dir).with_context(|| format!("reading {}", dir.display()))? {
         let name = entry?.file_name();
-        if !allowed.iter().any(|keep| name == *keep) {
-            return Ok(false);
+        if !is_kept(&name, allowed) {
+            found.push(name.to_string_lossy().into_owned());
         }
     }
-    Ok(true)
+    found.sort();
+    Ok(found)
 }
 
-/// Removes everything in `dir` except the names in `keep`.
+fn is_kept(name: &std::ffi::OsStr, allowed: &[&str]) -> bool {
+    allowed.iter().chain(&OS_CLUTTER).any(|keep| name == *keep)
+}
+
+/// Removes everything in `dir` except the names in `keep` and OS clutter.
 pub(crate) fn clear(dir: &Path, keep: &[&str]) -> Result<()> {
     for entry in fs::read_dir(dir).with_context(|| format!("reading {}", dir.display()))? {
         let entry = entry?;
-        if keep.iter().any(|name| entry.file_name() == *name) {
+        if is_kept(&entry.file_name(), keep) {
             continue;
         }
         let path = entry.path();

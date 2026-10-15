@@ -24,7 +24,7 @@ cd my-service
 cargo rusticate setup && cargo rusticate db up && cargo rusticate verify
 ```
 
-Or fill a repository you already created and cloned (the directory may contain only `.git`, which is kept, remote included):
+Or fill the current directory: an empty folder, or a repository you already created and cloned. It may contain only `.git` (kept, remote included) and OS files such as `.DS_Store`:
 
 ```sh
 git clone git@github.com:acme/my-service.git && cd my-service
@@ -36,7 +36,7 @@ cargo rusticate init --owner acme
 | `--owner <login>` | GitHub user or organisation that owns the repository. Written to `CODEOWNERS` and the `SECURITY.md` report link. Without it they say `OWNER`. |
 | `--path <dir>` | (`new`) Directory to create. Default: `./<name>`. |
 | `--name <name>` | (`init`) Project name. Default: the directory's name. |
-| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.2.0` for 0.2.0). `--ref main` gives the latest unreleased template. |
+| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.2.1` for 0.2.1). `--ref main` gives the latest unreleased template. |
 | `--template <url-or-dir>` | Another source: a fork's git URL, or a local checkout of the template. |
 | `--no-git` | Do not initialise a git repository. |
 
