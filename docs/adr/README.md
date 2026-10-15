@@ -10,3 +10,4 @@ An ADR records one decision that changes how the system is built: a new bounded 
 | ADR | Decision | Status |
 |---|---|---|
 | [0001](0001-adopt-engineering-standard-v2.md) | Adopt the v2 engineering standard and its enforcement | Accepted |
+| [0002](0002-composable-template-modules.md) | Compose generated projects from optional template modules | Accepted |

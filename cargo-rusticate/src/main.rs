@@ -6,6 +6,7 @@
 //! Cargo runs `cargo rusticate <args>` as `cargo-rusticate rusticate <args>`;
 //! running the binary directly (`cargo-rusticate <args>`) works too.
 
+mod blocks;
 mod generate;
 mod git;
 mod identity;
