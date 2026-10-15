@@ -30,9 +30,16 @@ pub(crate) struct Report {
 pub(crate) fn into_new_dir(plan: &Plan, dest: &Path) -> Result<Report> {
     if dest.exists() {
         ensure!(
-            dest.is_dir() && tree::only_contains(dest, &[])?,
-            "`{}` already exists and is not an empty directory",
+            dest.is_dir(),
+            "`{}` already exists and is not a directory",
             dest.display()
+        );
+        let found = tree::unexpected(dest, &[])?;
+        ensure!(
+            found.is_empty(),
+            "`{}` already exists and is not empty (it contains {})",
+            dest.display(),
+            listing(&found)
         );
         generate_or_restore(plan, dest, Restore::Clear)
     } else {
@@ -44,13 +51,29 @@ pub(crate) fn into_new_dir(plan: &Plan, dest: &Path) -> Result<Report> {
 /// `cargo rusticate init`: `dest` may contain nothing but `.git` (a freshly
 /// cloned empty repository), which is kept as it is.
 pub(crate) fn into_existing_dir(plan: &Plan, dest: &Path) -> Result<Report> {
+    let found = tree::unexpected(dest, &[".git"])?;
     ensure!(
-        tree::only_contains(dest, &[".git"])?,
-        "`{}` is not empty: `cargo rusticate init` needs a directory with nothing but `.git` \
-         (use `cargo rusticate new <name>` to create a new directory)",
-        dest.display()
+        found.is_empty(),
+        "`{}` is not empty (it contains {}): `cargo rusticate init` needs a directory with \
+         nothing but `.git` (use `cargo rusticate new <name>` to create a new directory)",
+        dest.display(),
+        listing(&found)
     );
     generate_or_restore(plan, dest, Restore::Clear)
+}
+
+/// `a`, `b`, `c` and 2 more: enough to see what is in the way.
+fn listing(names: &[String]) -> String {
+    const SHOWN: usize = 3;
+    let shown: Vec<String> = names
+        .iter()
+        .take(SHOWN)
+        .map(|name| format!("`{name}`"))
+        .collect();
+    match names.len().saturating_sub(SHOWN) {
+        0 => shown.join(", "),
+        more => format!("{} and {more} more", shown.join(", ")),
+    }
 }
 
 /// How to undo a failed generation.
