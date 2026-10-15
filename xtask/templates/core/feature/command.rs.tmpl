@@ -24,7 +24,7 @@ pub struct {{Feature}}Result {
     pub reference: String,
 }
 
-/// HOP 2: authorize → decide (with {{domain_ident}}_engine) → return.
+/// HOP 2: authorize → decide (with `{{domain_ident}}_engine`) → return.
 #[tracing::instrument(
     name = "{{domain}}.{{feature}}",
     skip_all,

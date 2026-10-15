@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context as _, Result, ensure};
 
+use crate::links::WebSource;
 use crate::{git, tree};
 
 pub(crate) const DEFAULT_TEMPLATE: &str = "https://github.com/ahadiihsan/rusticate.git";
@@ -69,6 +70,7 @@ impl Source {
             Self::Local(dir) => Ok(Fetched {
                 root: dir.clone(),
                 files: listed_files(dir)?,
+                web: local_web_source(dir),
                 _staging: None,
             }),
             Self::Git { url, git_ref } => {
@@ -78,9 +80,14 @@ impl Source {
                     .into_iter()
                     .map(|entry| entry.path)
                     .collect();
+                let revision = match git_ref {
+                    Some(git_ref) => git_ref.clone(),
+                    None => head_commit(staging.path()).unwrap_or_else(|| "HEAD".to_owned()),
+                };
                 Ok(Fetched {
                     root: staging.path().to_path_buf(),
                     files,
+                    web: WebSource::from_remote(url, &revision),
                     _staging: Some(staging),
                 })
             }
@@ -93,6 +100,8 @@ impl Source {
 pub(crate) struct Fetched {
     pub(crate) root: PathBuf,
     files: Vec<PathBuf>,
+    /// Where these files can be browsed, if on GitHub.
+    pub(crate) web: Option<WebSource>,
     _staging: Option<Staging>,
 }
 
@@ -102,6 +111,18 @@ impl Fetched {
     pub(crate) fn copy_into(&self, dest: &Path, excluded: &[&str]) -> Result<usize> {
         copy_files(&self.root, &self.files, dest, excluded)
     }
+}
+
+/// A local checkout's `origin` on GitHub, at its current commit.
+fn local_web_source(dir: &Path) -> Option<WebSource> {
+    let remote = git::output(dir, &["remote", "get-url", "origin"]).ok()?;
+    let remote = String::from_utf8(remote).ok()?;
+    WebSource::from_remote(remote.trim(), &head_commit(dir)?)
+}
+
+fn head_commit(dir: &Path) -> Option<String> {
+    let sha = git::output(dir, &["rev-parse", "HEAD"]).ok()?;
+    Some(String::from_utf8(sha).ok()?.trim().to_owned())
 }
 
 /// The template release this generator belongs to.

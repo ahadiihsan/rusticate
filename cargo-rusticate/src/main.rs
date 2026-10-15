@@ -10,6 +10,7 @@ mod blocks;
 mod generate;
 mod git;
 mod identity;
+mod links;
 mod modules;
 mod name;
 mod project;

@@ -49,8 +49,12 @@ Then:
 
 | Need | Do |
 |---|---|
-| React to something another context did, or make others react to you | events, with messaging ([add-event-consumer](../add-event-consumer/SKILL.md)) |
+| React to something another context did, or make others react to you | events (with messaging) |
 | Synchronous call into another context | avoid. If unavoidable, the callee must be a *shared* context (`[domains].shared` in `architecture.toml`), approved by ADR. `iam` is the only one today. |
 | Read another context's tables | never (DB-013); `cargo rusticate arch` rejects SQL that references another context's schema |
 
+<!-- rusticate:module(messaging):start -->
+Events are covered by [add-event-consumer](../add-event-consumer/SKILL.md).
+
+<!-- rusticate:module(messaging):end -->
 A context must be mountable into any product binary: its router is generic over the host state, and its migrations (with PostgreSQL) live with it.

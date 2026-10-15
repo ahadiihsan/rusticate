@@ -78,7 +78,7 @@ The commands are not built into this tool. They live in each project's `xtask/`,
 ## What the generator does
 
 1. Fetches the template at the release matching its own version (`cargo-rusticate 0.1.0` → tag `v0.1.0`), so a given generator always produces the same project.
-2. Keeps the modules you chose: the template declares them in `template.toml`, with the paths each owns and the blocks it marks in shared files. A Rust file that lost lines is formatted with `rustfmt`.
+2. Keeps the modules you chose: the template declares them in `template.toml`, with the paths each owns and the blocks it marks in shared files. A Rust file that lost lines is formatted with `rustfmt`, and a document link into a file that was left out points at that file in the template repository, at the version used.
 3. Renames the template's identity everywhere: `rusticate` → `my-service`, `Rusticate` → `My Service`, the repository URL and `@ahadiihsan` → your owner. Links into the template's history and the generator's own name are kept. Sections that only make sense in the template repository are removed.
 4. Refuses to finish if any other spelling of the template's identity remains, or a marker is malformed or names an unknown module, and leaves the directory as it found it.
 5. Starts a fresh git repository on `main` (no commit), unless the directory already had one or you passed `--no-git`.
