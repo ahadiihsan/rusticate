@@ -8,7 +8,6 @@ publish.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-cargo_metadata.workspace = true
 chrono.workspace = true
 clap.workspace = true
 iam = { workspace = true, features = ["dev-tokens"] }
@@ -16,6 +15,7 @@ op-context.workspace = true
 proc-macro2.workspace = true
 regex.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 syn.workspace = true
 toml.workspace = true
 uuid.workspace = true

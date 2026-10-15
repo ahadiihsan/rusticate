@@ -110,7 +110,6 @@ proptest = "1.12"
 rust_decimal = "1.43" # test oracle only — production money math is integer-based
 
 # ---- Tooling (xtask only) ---------------------------------------------------
-cargo_metadata = "0.23"
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
 regex = "1.13"
 syn = { version = "3.0", features = ["full", "visit", "extra-traits"] }

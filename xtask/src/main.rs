@@ -9,6 +9,7 @@ mod arch;
 mod db;
 mod dev_env;
 mod generator;
+mod metadata;
 mod scaffold;
 mod sh;
 mod workspace;

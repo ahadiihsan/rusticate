@@ -8,9 +8,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context as _, Result};
-use cargo_metadata::MetadataCommand;
 
-use crate::{sh, workspace};
+use crate::{metadata, sh, workspace};
 
 const DIR: &str = "cargo-rusticate";
 
@@ -57,17 +56,12 @@ pub fn deny() -> Result<()> {
 /// The generator builds with the `rust-version` it declares (installs that
 /// toolchain through rustup on first use).
 pub fn msrv() -> Result<()> {
-    let metadata = MetadataCommand::new()
-        .manifest_path(manifest())
-        .no_deps()
-        .exec()
-        .context("reading cargo-rusticate's manifest")?;
+    let metadata = metadata::load(&manifest()).context("reading cargo-rusticate's manifest")?;
     let rust_version = metadata
         .packages
         .first()
-        .and_then(|package| package.rust_version.as_ref())
-        .context("cargo-rusticate must declare a rust-version")?
-        .to_string();
+        .and_then(|package| package.rust_version.clone())
+        .context("cargo-rusticate must declare a rust-version")?;
     sh::run(sh::cmd(
         "rustup",
         [

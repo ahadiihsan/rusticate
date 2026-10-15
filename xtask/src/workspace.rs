@@ -4,8 +4,9 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
-use cargo_metadata::{Metadata, MetadataCommand, Package};
 use serde::Deserialize;
+
+use crate::metadata::{self, Metadata, Package};
 
 pub fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -96,18 +97,14 @@ impl Workspace {
                 .context("reading architecture.toml")?,
         )
         .context("parsing architecture.toml")?;
-        let metadata = MetadataCommand::new()
-            .manifest_path(root.join("Cargo.toml"))
-            .no_deps()
-            .exec()
-            .context("cargo metadata")?;
+        let metadata = metadata::load(&root.join("Cargo.toml"))?;
 
         let mut members = Vec::new();
-        for package in metadata.workspace_packages() {
+        for package in &metadata.packages {
             let abs_dir = package
                 .manifest_path
                 .parent()
-                .map(|p| p.as_std_path().to_path_buf())
+                .map(Path::to_path_buf)
                 .context("manifest without parent")?;
             let dir = abs_dir
                 .strip_prefix(&root)
@@ -120,7 +117,7 @@ impl Workspace {
                 .find(|tier| tier.members.iter().any(|glob| glob_match(glob, &dir)))
                 .with_context(|| format!("{dir} matches no tier in architecture.toml"))?;
             members.push(Member {
-                name: package.name.to_string(),
+                name: package.name.clone(),
                 dir,
                 abs_dir,
                 tier: tier.name.clone(),
@@ -141,9 +138,9 @@ impl Workspace {
 
     pub fn package(&self, name: &str) -> Option<&Package> {
         self.metadata
-            .workspace_packages()
-            .into_iter()
-            .find(|package| package.name.as_str() == name)
+            .packages
+            .iter()
+            .find(|package| package.name == name)
     }
 
     pub fn tier(&self, name: &str) -> Option<&Tier> {
