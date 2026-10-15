@@ -11,7 +11,7 @@ use crate::identity::Identity;
 use crate::modules::{self, Modules, Request, Selection};
 use crate::name::{Owner, ProjectName};
 use crate::template::{Fetched, Source};
-use crate::{git, links, tree};
+use crate::{git, links, record, tree};
 
 #[derive(Debug)]
 pub(crate) struct Plan {
@@ -157,6 +157,16 @@ fn generate(plan: &Plan, prepared: &Prepared, dest: &Path) -> Result<Report> {
     if let Some(web) = &fetched.web {
         links::repoint_dangling(dest, web)?;
     }
+    record::write(
+        dest,
+        &record::Origin {
+            source: &fetched.source,
+            revision: fetched.revision.as_deref(),
+            modules: selection.names(),
+            name: plan.name.as_str(),
+            owner: plan.owner.as_ref().map(Owner::as_str),
+        },
+    )?;
     let git_initialised = plan.init_git && !dest.join(".git").exists();
     if git_initialised {
         git::init(dest)?;

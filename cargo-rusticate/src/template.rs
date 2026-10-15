@@ -71,6 +71,8 @@ impl Source {
                 root: dir.clone(),
                 files: listed_files(dir)?,
                 web: local_web_source(dir),
+                source: dir.display().to_string(),
+                revision: head_commit(dir),
                 _staging: None,
             }),
             Self::Git { url, git_ref } => {
@@ -88,6 +90,8 @@ impl Source {
                     root: staging.path().to_path_buf(),
                     files,
                     web: WebSource::from_remote(url, &revision),
+                    source: url.clone(),
+                    revision: Some(revision),
                     _staging: Some(staging),
                 })
             }
@@ -102,6 +106,9 @@ pub(crate) struct Fetched {
     files: Vec<PathBuf>,
     /// Where these files can be browsed, if on GitHub.
     pub(crate) web: Option<WebSource>,
+    /// The git URL or local checkout, and the revision fetched.
+    pub(crate) source: String,
+    pub(crate) revision: Option<String>,
     _staging: Option<Staging>,
 }
 

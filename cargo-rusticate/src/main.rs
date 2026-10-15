@@ -14,6 +14,7 @@ mod links;
 mod modules;
 mod name;
 mod project;
+mod record;
 mod template;
 mod tree;
 

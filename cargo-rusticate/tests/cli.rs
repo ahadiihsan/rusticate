@@ -737,6 +737,12 @@ fn without_flags_every_module_is_included_and_markers_are_removed() {
         "template-only paths never ship"
     );
     assert!(!project.join("template.toml").exists());
+    let record = read(&project, "rusticate.toml");
+    assert!(record.contains("modules = [\"db\", \"queue\"]"), "{record}");
+    assert!(
+        record.contains("name = \"svc\"") && record.contains("owner = \"acme\""),
+        "{record}"
+    );
     assert!(
         stdout(&out).contains("core + db + queue"),
         "{}",
