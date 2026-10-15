@@ -14,7 +14,7 @@ path = "src/main.rs"
 anyhow.workspace = true
 async-nats.workspace = true
 billing.workspace = true
-# xtask:contexts (`cargo xtask new feature --kind event` adds consuming contexts here)
+# xtask:contexts (`cargo rusticate new feature --kind event` adds consuming contexts here)
 datastore.workspace = true
 figment.workspace = true
 futures.workspace = true

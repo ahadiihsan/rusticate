@@ -11,7 +11,7 @@ Engines are the pure core of a context ([`billing-engine`](../../../crates/domai
 
 | Rule | Meaning | Enforced by |
 |---|---|---|
-| ENG-001 | dependencies only from the allowlist (`serde`, `thiserror`; dev: `proptest`, `rust_decimal`); no `async`/`.await`; no I/O | `cargo xtask arch`, engine `clippy.toml` |
+| ENG-001 | dependencies only from the allowlist (`serde`, `thiserror`; dev: `proptest`, `rust_decimal`); no `async`/`.await`; no I/O | `cargo rusticate arch`, engine `clippy.toml` |
 | ENG-002 | no clock, no id generation, no randomness, no `HashMap`/`HashSet` iteration: pass `now`, ids and seeds **in** | engine `clippy.toml` |
 | ENG-003 | money is `Money` (i64 minor units + `Currency`); rates are `Bps`; no `f32`/`f64` anywhere | `arch`, clippy, types |
 | ENG-004 | `#![deny(clippy::arithmetic_side_effects, clippy::as_conversions)]`: use `checked_*`, `try_from`, `saturating_*` deliberately | clippy |
@@ -64,7 +64,7 @@ proptest! {
 
 Test-only arithmetic in oracles may need `#[expect(clippy::arithmetic_side_effects, reason = "...")]` on the test module, never on production code.
 
-Run with `cargo xtask test -p <ctx>-engine`.
+Run with `cargo rusticate test -p <ctx>-engine`.
 
 ## Using the engine from a workflow
 

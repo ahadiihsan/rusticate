@@ -387,7 +387,7 @@ fn migrations(
             violations.push(Violation::new(
                 "DB-011",
                 location.clone(),
-                "name migrations `<YYYYMMDDHHMMSS>_<description>.sql` (cargo xtask new migration)",
+                "name migrations `<YYYYMMDDHHMMSS>_<description>.sql` (cargo rusticate new migration)",
             ));
         }
         let sql = lex_sql(&std::fs::read_to_string(&path)?);

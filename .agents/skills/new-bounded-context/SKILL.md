@@ -20,8 +20,8 @@ A new context changes the context map, so it **needs an ADR** in [`docs/adr/`](.
 ## Create
 
 ```sh
-cargo xtask new domain shipping
-cargo xtask db migrate
+cargo rusticate new domain shipping
+cargo rusticate db migrate
 ```
 
 This generates:
@@ -49,6 +49,6 @@ Then:
 | React to something another context did | consume its events ([add-event-consumer](../add-event-consumer/SKILL.md)) |
 | Another context must react to you | publish events |
 | Synchronous call into another context | avoid. If unavoidable, the callee must be a *shared* context (`[domains].shared` in `architecture.toml`), approved by ADR. `iam` is the only one today. |
-| Read another context's tables | never (DB-013); `cargo xtask arch` rejects SQL that references another context's schema |
+| Read another context's tables | never (DB-013); `cargo rusticate arch` rejects SQL that references another context's schema |
 
 A context must be mountable into any product binary: its router is generic over the host state, and its migrations live with it.

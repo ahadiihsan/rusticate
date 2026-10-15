@@ -4,7 +4,7 @@ A production boilerplate for multi-tenant Rust backends. You get the standard, t
 
 - **[Engineering standard (SOP v2)](docs/sop/rust-backend-sop-v2.md):** rules with IDs, each with its reason and its enforcer.
 - **Reference implementation:** the [`billing`](crates/domains/billing) bounded context, built on the platform crates in [`crates/foundation`](crates/foundation).
-- **Enforcement:** the compiler, clippy, `cargo xtask arch`, a PostgreSQL catalog guard, `cargo-deny`, squawk and the tests. `cargo xtask verify` is the definition of done.
+- **Enforcement:** the compiler, clippy, `cargo rusticate arch`, a PostgreSQL catalog guard, `cargo-deny`, squawk and the tests. `cargo rusticate verify` is the definition of done.
 - **Agent harness:** [AGENTS.md](AGENTS.md), [task skills](.agents/skills), hooks.
 
 Stack: Rust 2024 · Axum · SQLx on PostgreSQL 18 with row-level security · NATS JetStream · OpenTelemetry · OpenAPI 3.1.
@@ -29,22 +29,22 @@ The generator copies this template at the release matching its version, renames 
 <!-- rusticate:template-only:end -->
 ## Quickstart
 
-Requirements: rustup, Docker.
+Requirements: rustup, Docker, and `cargo install cargo-rusticate --locked`. Every `cargo rusticate <command>` runs this project's own `cargo xtask <command>`, which also works without it.
 
 ```sh
-cargo xtask setup        # git hooks; lists any missing tool and how to install it
-cargo xtask db up        # Postgres :55432 (with the role contract) + NATS :4222
-cargo xtask db migrate
-cargo xtask verify       # fmt, architecture, lint, query metadata, ~150 tests
+cargo rusticate setup        # git hooks; lists any missing tool and how to install it
+cargo rusticate db up        # Postgres :55432 (with the role contract) + NATS :4222
+cargo rusticate db migrate
+cargo rusticate verify       # fmt, architecture, lint, query metadata, ~150 tests
 
-cargo xtask run api      # http://localhost:8080/docs
-cargo xtask run worker   # second terminal: outbox relay + consumers
+cargo rusticate run api      # http://localhost:8080/docs
+cargo rusticate run worker   # second terminal: outbox relay + consumers
 ```
 
 Try it:
 
 ```sh
-TOKEN=$(cargo xtask token --perm billing.settings.manage --perm billing.invoice.issue --perm billing.invoice.read)
+TOKEN=$(cargo rusticate token --perm billing.settings.manage --perm billing.invoice.issue --perm billing.invoice.read)
 curl -s -X PUT localhost:8080/v1/billing/settings -H "authorization: Bearer $TOKEN" \
   -H 'if-none-match: *' -H 'content-type: application/json' -d '{"currency":"IDR","tax_rate_bps":1100}'
 curl -s -X POST localhost:8080/v1/invoices -H "authorization: Bearer $TOKEN" \
@@ -55,10 +55,10 @@ curl -s -X POST localhost:8080/v1/invoices -H "authorization: Bearer $TOKEN" \
 ## Build something
 
 ```sh
-cargo xtask new domain shipping                              # bounded context + engine + schema, wired in
-cargo xtask new migration shipping "create shipments"
-cargo xtask new feature shipping dispatch_parcel --kind command
-cargo xtask arch                                             # lists every SCAFFOLD marker left to fill
+cargo rusticate new domain shipping                              # bounded context + engine + schema, wired in
+cargo rusticate new migration shipping "create shipments"
+cargo rusticate new feature shipping dispatch_parcel --kind command
+cargo rusticate arch                                             # lists every SCAFFOLD marker left to fill
 ```
 
 The [implement-feature](.agents/skills/implement-feature/SKILL.md) skill walks through it.

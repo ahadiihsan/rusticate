@@ -10,7 +10,7 @@ Each bounded context owns one PostgreSQL schema, named after it, and its own mig
 ## Create
 
 ```sh
-cargo xtask new migration <ctx> "create shipments"     # → crates/domains/<ctx>/migrations/<timestamp>_create_shipments.sql
+cargo rusticate new migration <ctx> "create shipments"     # → crates/domains/<ctx>/migrations/<timestamp>_create_shipments.sql
 ```
 
 The file starts from the **tenant-table template**. Keep every element unless the table is genuinely global:
@@ -38,9 +38,9 @@ GRANT SELECT, INSERT, UPDATE ON <ctx>.shipments TO app_rw;   -- minimal; never T
 Then:
 
 ```sh
-cargo xtask db migrate      # apply locally
-cargo xtask test -p <ctx>   # the context's schema test runs the schema guard
-cargo xtask db prepare      # once queries use the new columns
+cargo rusticate db migrate      # apply locally
+cargo rusticate test -p <ctx>   # the context's schema test runs the schema guard
+cargo rusticate db prepare      # once queries use the new columns
 ```
 
 ## Rules the schema guard checks (fails tests if broken)
@@ -61,7 +61,7 @@ cargo xtask db prepare      # once queries use the new columns
 | DB-003a | never redefine `platform.current_tenant_id()`; every policy depends on it |
 | DB-011b | nothing in schema `public` |
 
-`cargo xtask arch` additionally checks the file name, that every object is schema-qualified with **this** context's schema, and that `sqlx.toml` declares it. CI runs squawk on new migrations and fails if a merged migration changed.
+`cargo rusticate arch` additionally checks the file name, that every object is schema-qualified with **this** context's schema, and that `sqlx.toml` declares it. CI runs squawk on new migrations and fails if a merged migration changed.
 
 ## Types
 

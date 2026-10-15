@@ -5,7 +5,7 @@ description: Turn a PRD, TRD, ticket or feature request into a finished feature 
 
 # Implement a feature
 
-The goal is a change that passes `cargo xtask verify` and that a reviewer can read like the [`billing`](../../../crates/domains/billing) reference. Rules are cited by ID; their reasons are in the [SOP](../../../docs/sop/rust-backend-sop-v2.md).
+The goal is a change that passes `cargo rusticate verify` and that a reviewer can read like the [`billing`](../../../crates/domains/billing) reference. Rules are cited by ID; their reasons are in the [SOP](../../../docs/sop/rust-backend-sop-v2.md).
 
 ## 1. Classify before writing code
 
@@ -26,22 +26,22 @@ Answer these in your notes or PR description:
 
 ## 2. Schema (only if tables change)
 
-Follow [add-migration](../add-migration/SKILL.md): `cargo xtask new migration <ctx> "<what>"`, fill the tenant template, then `cargo xtask db migrate`.
+Follow [add-migration](../add-migration/SKILL.md): `cargo rusticate new migration <ctx> "<what>"`, fill the tenant template, then `cargo rusticate db migrate`.
 
 ## 3. Business rules first
 
-Write pure functions in `<ctx>-engine`, with error variants and with example and property tests. Run `cargo xtask test -p <ctx>-engine`. This is the cheapest place to get the logic right.
+Write pure functions in `<ctx>-engine`, with error variants and with example and property tests. Run `cargo rusticate test -p <ctx>-engine`. This is the cheapest place to get the logic right.
 
 ## 4. Scaffold the slice
 
 ```sh
-cargo xtask new feature <ctx> <verb_noun> --kind command   # or query / event
+cargo rusticate new feature <ctx> <verb_noun> --kind command   # or query / event
 ```
 
-This creates `<feature>.rs`, `<feature>/http.rs` (or `handler.rs`), `<feature>/db.rs` and `tests/integration/<feature>.rs`. It also adds the permission constant, mounts the route (or registers the consumer in the worker), and runs `cargo fmt`. `cargo xtask arch` lists every `SCAFFOLD:` marker; replace them **in this order**:
+This creates `<feature>.rs`, `<feature>/http.rs` (or `handler.rs`), `<feature>/db.rs` and `tests/integration/<feature>.rs`. It also adds the permission constant, mounts the route (or registers the consumer in the worker), and runs `cargo fmt`. `cargo rusticate arch` lists every `SCAFFOLD:` marker; replace them **in this order**:
 
 1. **Command / view types** in `<feature>.rs`. Fields are value objects (`CustomerEmail`, `Quantity`, `InvoiceId`), never raw strings or numbers. Add new value objects to `types.rs` with a `parse` constructor.
-2. **SQL** in `<feature>/db.rs`. Use the `query!` family against `&mut TenantTx`, with `WHERE tenant_id = $1` on every statement. Return rows; convert to domain types in the workflow. Then run `cargo xtask db prepare`.
+2. **SQL** in `<feature>/db.rs`. Use the `query!` family against `&mut TenantTx`, with `WHERE tenant_id = $1` on every statement. Return rows; convert to domain types in the workflow. Then run `cargo rusticate db prepare`.
 3. **Workflow** in `<feature>.rs`. Follow [`issue_invoice`](../../../crates/domains/billing/src/issue_invoice.rs) step by step:
    1. `ctx.require(permissions::X)?`;
    2. for commands, `Fingerprint::of` and `db.begin(ctx)`; for queries, `db.begin_read_only(ctx)`;
@@ -77,8 +77,8 @@ Add an HTTP-level case in [`apps/api/tests/api/http_flows.rs`](../../../apps/api
 ## 6. Contract and finish
 
 ```sh
-cargo xtask openapi        # review the diff of apps/api/openapi.json like code
-cargo xtask verify         # the definition of done
+cargo rusticate openapi        # review the diff of apps/api/openapi.json like code
+cargo rusticate verify         # the definition of done
 ```
 
 Then self-review with [review-change](../review-change/SKILL.md).

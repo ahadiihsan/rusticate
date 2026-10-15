@@ -1,6 +1,6 @@
 # Configuration reference
 
-Binaries read `APP_*` environment variables once at startup (CFG-001); `__` separates nesting levels. Unknown keys are rejected and invalid values stop startup with every problem listed (CFG-002). Local defaults live only in [`xtask/src/dev_env.rs`](../xtask/src/dev_env.rs) and are applied by `cargo xtask run|test|db`.
+Binaries read `APP_*` environment variables once at startup (CFG-001); `__` separates nesting levels. Unknown keys are rejected and invalid values stop startup with every problem listed (CFG-002). Local defaults live only in [`xtask/src/dev_env.rs`](../xtask/src/dev_env.rs) and are applied by `cargo rusticate run|test|db`.
 
 ## api
 
@@ -44,4 +44,4 @@ Binaries read `APP_*` environment variables once at startup (CFG-001); `__` sepa
 
 ## Local stack
 
-`cargo xtask db up` starts Postgres 18 on `localhost:55432` with the role contract from [`docker/postgres/initdb/00-roles.sql`](../docker/postgres/initdb/00-roles.sql), and NATS JetStream on `localhost:4222`. The credentials are local-only and equal to the role names.
+`cargo rusticate db up` starts Postgres 18 on `localhost:55432` with the role contract from [`docker/postgres/initdb/00-roles.sql`](../docker/postgres/initdb/00-roles.sql), and NATS JetStream on `localhost:4222`. The credentials are local-only and equal to the role names.

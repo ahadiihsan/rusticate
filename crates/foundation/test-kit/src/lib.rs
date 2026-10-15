@@ -1,4 +1,4 @@
-//! Test fixtures (SOP TEST-002..TEST-004). **Dev-dependency only**: `cargo xtask
+//! Test fixtures (SOP TEST-002..TEST-004). **Dev-dependency only**: `cargo rusticate
 //! arch` fails if any crate lists it under `[dependencies]`.
 //!
 //! * [`TestDb`]: a fresh database per test, migrated, with handles that run as

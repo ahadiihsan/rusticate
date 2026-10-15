@@ -534,3 +534,85 @@ fn a_missing_release_is_a_clear_error_and_leaves_nothing() {
     );
     assert!(!work.path().join("svc").exists());
 }
+
+/// A minimal project: the two markers and a real `xtask` that echoes its
+/// arguments, behind the same `cargo xtask` alias the template defines.
+fn fake_project(root: &Path) {
+    write(root, "architecture.toml", "");
+    write(
+        root,
+        "Cargo.toml",
+        "[workspace]\nresolver = \"3\"\nmembers = [\"xtask\"]\n",
+    );
+    write(
+        root,
+        ".cargo/config.toml",
+        "[alias]\nxtask = \"run --quiet --package xtask --\"\n",
+    );
+    write(
+        root,
+        "xtask/Cargo.toml",
+        "[package]\nname = \"xtask\"\nversion = \"0.0.0\"\nedition = \"2021\"\n",
+    );
+    write(
+        root,
+        "xtask/src/main.rs",
+        "fn main() {\n    let args: Vec<String> = std::env::args().skip(1).collect();\n    \
+         println!(\"xtask {}\", args.join(\" \"));\n    \
+         if args.first().is_some_and(|a| a == \"fail\") {\n        std::process::exit(7);\n    }\n}\n",
+    );
+    fs::create_dir_all(root.join("crates/billing/src")).unwrap();
+}
+
+fn rusticate_in_project(project: &Path, cwd: &Path, args: &[&str]) -> Output {
+    Command::new(env!("CARGO_BIN_EXE_cargo-rusticate"))
+        .current_dir(cwd)
+        .env("CARGO_TARGET_DIR", project.join("target"))
+        .arg("rusticate")
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+fn stdout(out: &Output) -> String {
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+#[test]
+fn inside_a_project_every_other_command_is_its_xtask() {
+    let dir = Scratch::new("project");
+    let project = dir.path();
+    fake_project(project);
+
+    let db = rusticate_in_project(project, project, &["db", "up"]);
+    assert_ok(&db);
+    assert_eq!(stdout(&db), "xtask db up\n");
+
+    let scaffold = rusticate_in_project(project, project, &["new", "domain", "shipping"]);
+    assert_ok(&scaffold);
+    assert_eq!(stdout(&scaffold), "xtask new domain shipping\n");
+
+    let nested = project.join("crates/billing/src");
+    let from_below = rusticate_in_project(project, &nested, &["verify", "--fast"]);
+    assert_ok(&from_below);
+    assert_eq!(stdout(&from_below), "xtask verify --fast\n");
+
+    let failing = rusticate_in_project(project, project, &["fail"]);
+    assert_eq!(
+        failing.status.code(),
+        Some(7),
+        "the xtask exit code is kept"
+    );
+}
+
+#[test]
+fn outside_a_project_a_project_command_is_explained() {
+    let dir = Scratch::new("nowhere");
+
+    let out = rusticate(dir.path(), &["db", "up"]);
+
+    assert!(!out.status.success());
+    let err = stderr(&out);
+    assert!(err.contains("`db` is a project command"), "{err}");
+    assert!(err.contains("cargo rusticate new <name>"), "{err}");
+}

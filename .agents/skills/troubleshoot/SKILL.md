@@ -1,6 +1,6 @@
 ---
 name: troubleshoot
-description: Diagnose and fix failures in this workspace — cargo xtask arch violations, sqlx offline/compile errors, RLS and role errors, failing database tests, problem+json status surprises, NATS/worker issues. Use when a check, build, test or local run fails and the cause is not obvious.
+description: Diagnose and fix failures in this workspace — cargo rusticate arch violations, sqlx offline/compile errors, RLS and role errors, failing database tests, problem+json status surprises, NATS/worker issues. Use when a check, build, test or local run fails and the cause is not obvious.
 ---
 
 # Troubleshoot
@@ -11,15 +11,15 @@ First rule: fix the cause. Never silence the check (`#[allow]`, editing `archite
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `no cached data for this query` / `SQLX_OFFLINE` error | a new or changed `query!` without metadata | `cargo xtask db up && cargo xtask db migrate && cargo xtask db prepare` |
+| `no cached data for this query` / `SQLX_OFFLINE` error | a new or changed `query!` without metadata | `cargo rusticate db up && cargo rusticate db migrate && cargo rusticate db prepare` |
 | the same error only in the editor (rust-analyzer `macro-error`) while `cargo check` passes | stale expansion: rust-analyzer expanded the macro before `db prepare` wrote `.sqlx/`, and does not watch that directory | run **rust-analyzer: Restart server** (or edit the file) |
 | `query!` type mismatch, e.g. `expected Option<..>` | column nullability inferred by Postgres | fix the schema (`NOT NULL`), or override in SQL: `col AS "col!"` (non-null) or `AS "col?"` (nullable) |
-| `relation "x.y" does not exist` while compiling or preparing | migration not applied locally | `cargo xtask db migrate` (or `db reset`) |
+| `relation "x.y" does not exist` while compiling or preparing | migration not applied locally | `cargo rusticate db migrate` (or `db reset`) |
 | `use of disallowed type axum::Json` | used axum's extractor | `api_kit::Json` (also `Path`, `Query`) |
 | `allow attribute ... use expect` | `#[allow]` is banned | `#[expect(lint, reason = "...")]`, only if the code is right |
 | `arithmetic_side_effects` in an engine | unchecked `+ - * /` | `checked_add(..).ok_or(MoneyError::OutOfRange)?` etc. |
 
-## `cargo xtask arch` violations
+## `cargo rusticate arch` violations
 
 Each message names a rule. The usual fixes:
 
@@ -31,7 +31,7 @@ Each message names a rule. The usual fixes:
 | SEC-002 | an `OpCtx` is being built outside an auth edge: take `&OpCtx` as a parameter instead |
 | DB-001/002/003/010 | a context touched pools, `SystemStore`, `set_config`/`SET ROLE`, or runtime `sqlx::query(..)`: use `TenantTx` and `query!` |
 | DB-007 | bound the query (`LIMIT`, keyset) or select by `= ANY($1)` |
-| DB-011 | migration name, schema qualification, or `sqlx.toml`: use `cargo xtask new migration` |
+| DB-011 | migration name, schema qualification, or `sqlx.toml`: use `cargo rusticate new migration` |
 | DB-013 | SQL references another context's schema: use its events or published API |
 | OBS-001 / SEC-003 | the workflow lacks `#[tracing::instrument(skip_all, ..)]` or `ctx: &OpCtx` as its first parameter |
 | TEST-005 | the workflow is never called by an integration test: add one |
@@ -47,8 +47,8 @@ Each message names a rule. The usual fixes:
 | `RoleMisconfigured: role ... is a superuser / owns tables / has BYPASSRLS` | wrong credentials for this store | `APP_DATABASE__URL` → `app_rw`; `APP_SYSTEM_DATABASE__URL` → `app_system`; migrations → `app_owner` |
 | `permission denied for table` | missing `GRANT` in the migration | add a minimal grant to `app_rw` in a **new** migration |
 | `LockTimeout` / 503 `CONCURRENT_MODIFICATION` | contention; expected under load | the client retries (`Retry-After`); if constant, check for long transactions |
-| `#[sqlx::test]` failing instantly | `DATABASE_URL` not set, or database down | run through `cargo xtask test` (it sets local defaults); `cargo xtask db up` |
-| checksum mismatch on migrate | a local migration was edited after being applied | `cargo xtask db reset` (local only; never edit merged migrations) |
+| `#[sqlx::test]` failing instantly | `DATABASE_URL` not set, or database down | run through `cargo rusticate test` (it sets local defaults); `cargo rusticate db up` |
+| checksum mismatch on migrate | a local migration was edited after being applied | `cargo rusticate db reset` (local only; never edit merged migrations) |
 
 ## HTTP status surprises
 

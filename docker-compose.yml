@@ -1,4 +1,4 @@
-# Local development dependencies. Start with `cargo xtask db up`.
+# Local development dependencies. Start with `cargo rusticate db up`.
 # Ports are offset (55432) so a host Postgres on 5432 never collides.
 name: rusticate
 

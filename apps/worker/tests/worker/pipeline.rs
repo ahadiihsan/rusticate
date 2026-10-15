@@ -34,7 +34,7 @@ async fn issued_invoice_reaches_the_read_model_exactly_once(
     let db = TestDb::new(pool, conn, &[&billing::MIGRATOR]).await;
     let nats = async_nats::connect(NATS_URL)
         .await
-        .expect("NATS must be running (cargo xtask db up)");
+        .expect("NATS must be running (cargo rusticate db up)");
     let js = async_nats::jetstream::new(nats);
     let suffix = Uuid::now_v7().simple().to_string();
     let topology = Topology {

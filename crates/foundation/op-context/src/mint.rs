@@ -2,7 +2,7 @@
 //!
 //! Only authentication edges may mint a context: the IAM middleware (after
 //! verifying a token), worker envelopes (after reading a trusted event), and
-//! tests. `cargo xtask arch` fails the build if any other crate references
+//! tests. `cargo rusticate arch` fails the build if any other crate references
 //! `op_context::mint`.
 
 use crate::{ActorId, ActorKind, CorrelationId, OpCtx, Permission, TenantId};

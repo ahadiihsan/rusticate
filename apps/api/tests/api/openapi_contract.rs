@@ -1,5 +1,5 @@
 //! API-004: the OpenAPI document is a committed, reviewed contract.
-//! Regenerate with `cargo xtask openapi`, then review the diff like code.
+//! Regenerate with `cargo rusticate openapi`, then review the diff like code.
 
 const COMMITTED: &str = include_str!("../../openapi.json");
 
@@ -9,7 +9,7 @@ fn openapi_document_matches_the_committed_contract() {
 
     assert!(
         generated == COMMITTED,
-        "apps/api/openapi.json is stale: run `cargo xtask openapi` and review the contract diff"
+        "apps/api/openapi.json is stale: run `cargo rusticate openapi` and review the contract diff"
     );
 }
 

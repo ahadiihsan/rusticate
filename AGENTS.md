@@ -4,27 +4,29 @@ Operating manual for coding agents and engineers in this repository. It applies 
 
 - **The standard:** [docs/sop/rust-backend-sop-v2.md](docs/sop/rust-backend-sop-v2.md). Every rule has an ID (e.g. `DB-004`); tool output cites these IDs.
 - **The reference:** the `billing` context ([crates/domains/billing](crates/domains/billing)). Copy its *shape*. Start with [`issue_invoice.rs`](crates/domains/billing/src/issue_invoice.rs).
-- **The enforcement:** `cargo xtask verify`. If it passes, the change meets the standard; if it fails, the message names the rule.
+- **The enforcement:** `cargo rusticate verify`. If it passes, the change meets the standard; if it fails, the message names the rule.
 
 ## Commands
 
+`cargo rusticate <command>` runs this project's own `cargo xtask <command>` (install it once: `cargo install cargo-rusticate --locked`). Where it is not installed, as in CI or a fresh sandbox, run `cargo xtask` with the same arguments.
+
 | Do | Command |
 |---|---|
-| First time | `cargo xtask setup` then `cargo xtask db up` |
-| Done? (the gate) | `cargo xtask verify` (all) · `cargo xtask verify --fast` (no database) |
-| Architecture only | `cargo xtask arch` |
-| Tests | `cargo xtask test` · `cargo xtask test -p billing` · `cargo xtask test -p billing -- issue_invoice` |
-| New context / feature / migration | `cargo xtask new domain <name>` · `cargo xtask new feature <ctx> <verb_noun> --kind command\|query\|event` · `cargo xtask new migration <ctx> "<what>"` |
-| After changing SQL or migrations | `cargo xtask db migrate` then `cargo xtask db prepare` |
-| After changing HTTP DTOs or routes | `cargo xtask openapi` (then review `apps/api/openapi.json`) |
-| Run locally | `cargo xtask run api` · `cargo xtask run worker` · `cargo xtask token --perm billing.invoice.read` |
-| Fresh database | `cargo xtask db reset` |
+| First time | `cargo rusticate setup` then `cargo rusticate db up` |
+| Done? (the gate) | `cargo rusticate verify` (all) · `cargo rusticate verify --fast` (no database) |
+| Architecture only | `cargo rusticate arch` |
+| Tests | `cargo rusticate test` · `cargo rusticate test -p billing` · `cargo rusticate test -p billing -- issue_invoice` |
+| New context / feature / migration | `cargo rusticate new domain <name>` · `cargo rusticate new feature <ctx> <verb_noun> --kind command\|query\|event` · `cargo rusticate new migration <ctx> "<what>"` |
+| After changing SQL or migrations | `cargo rusticate db migrate` then `cargo rusticate db prepare` |
+| After changing HTTP DTOs or routes | `cargo rusticate openapi` (then review `apps/api/openapi.json`) |
+| Run locally | `cargo rusticate run api` · `cargo rusticate run worker` · `cargo rusticate token --perm billing.invoice.read` |
+| Fresh database | `cargo rusticate db reset` |
 
-Builds are offline (`SQLX_OFFLINE=true`): compiling never needs a database. A new or changed `query!` needs `cargo xtask db prepare` (with `db up`) before it compiles.
+Builds are offline (`SQLX_OFFLINE=true`): compiling never needs a database. A new or changed `query!` needs `cargo rusticate db prepare` (with `db up`) before it compiles.
 
 ## Definition of done
 
-1. `cargo xtask verify` passes, and no `SCAFFOLD:` marker remains.
+1. `cargo rusticate verify` passes, and no `SCAFFOLD:` marker remains.
 2. Every new workflow has integration tests: happy path, each failure mode, missing permission, **another tenant cannot see or change it**, and replay or concurrency where relevant.
 3. `.sqlx/` and `apps/api/openapi.json` are regenerated if queries or the API changed, and you have read the diff.
 4. You did not weaken a guardrail (see "Never").
@@ -47,10 +49,10 @@ gh pr merge --auto --squash       # merges itself once the checks are green
    - Is it a command (POST), a query (GET) or a reaction to an event?
    - Does it have business rules? They go in `<ctx>-engine`.
    - Can it touch many rows? Then page it or run it as a batch.
-2. **Schema** (if needed): `cargo xtask new migration`, fill the tenant-table template, then `db migrate`.
+2. **Schema** (if needed): `cargo rusticate new migration`, fill the tenant-table template, then `db migrate`.
 3. **Rules:** pure functions in `<ctx>-engine` with example tests and property tests against an independent oracle or law.
-4. **Slice:** `cargo xtask new feature ...`, then replace every `SCAFFOLD:` in this order: command types → `db.rs` (+ `db prepare`) → workflow → adapter → tests.
-5. **Verify:** `cargo xtask verify`. Fix the cause; never silence the check.
+4. **Slice:** `cargo rusticate new feature ...`, then replace every `SCAFFOLD:` in this order: command types → `db.rs` (+ `db prepare`) → workflow → adapter → tests.
+5. **Verify:** `cargo rusticate verify`. Fix the cause; never silence the check.
 
 Skills with the detailed playbooks are in [`.agents/skills/`](.agents/skills):
 
@@ -93,13 +95,13 @@ apps/api, apps/worker          composition roots (wiring only)
 crates/foundation/*            platform: op-context, datastore, api-kit, idempotency, messaging, server-kit, telemetry, test-kit
 crates/domains/<ctx>           bounded context: router(), MIGRATOR, permissions, events, features
 crates/domains/<ctx>-engine    pure rules of the context
-architecture.toml              tiers, allowlists, capabilities (read by `cargo xtask arch`)
+architecture.toml              tiers, allowlists, capabilities (read by `cargo rusticate arch`)
 xtask/                         enforcement and scaffolding
 docs/                          SOP, ADRs, configuration, operations
 ```
 
 <!-- rusticate:template-only:start -->
-`cargo-rusticate/` is the project generator (`cargo rusticate new`): a standalone crate outside the workspace, never copied into generated projects (nor is `.github/workflows/release.yml`, which publishes it). Anything you add to the template ships to every new project, so the generator renames `rusticate`, `Rusticate`, the repository URL and `@ahadiihsan`, and refuses any other spelling of them. Content that only makes sense in this repository goes inside a template-only block, delimited by HTML comment lines like the ones around this paragraph. `cargo xtask ci` generates a project and runs its `verify --fast`. Details: [cargo-rusticate/README.md](cargo-rusticate/README.md).
+`cargo-rusticate/` is the project generator (`cargo rusticate new`): a standalone crate outside the workspace, never copied into generated projects (nor is `.github/workflows/release.yml`, which publishes it). Anything you add to the template ships to every new project, so the generator renames `rusticate`, `Rusticate`, the repository URL and `@ahadiihsan`, and refuses any other spelling of them. Content that only makes sense in this repository goes inside a template-only block, delimited by HTML comment lines like the ones around this paragraph. `cargo rusticate ci` generates a project and runs its `verify --fast`. Details: [cargo-rusticate/README.md](cargo-rusticate/README.md).
 
 <!-- rusticate:template-only:end -->
 ## When stuck
