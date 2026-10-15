@@ -1,8 +1,7 @@
 //! Dependency-graph rules (ARCH-001..ARCH-003, ENG-001, SEC-005).
 
-use cargo_metadata::{Dependency, DependencyKind};
-
 use super::Violation;
+use crate::metadata::Dependency;
 use crate::workspace::{Member, Tier, Workspace};
 
 pub fn check(workspace: &Workspace) -> Vec<Violation> {
@@ -18,7 +17,7 @@ pub fn check(workspace: &Workspace) -> Vec<Violation> {
             if dependency.name == member.name {
                 continue; // self dev-dependency used to enable test features
             }
-            let is_dev = dependency.kind == DependencyKind::Development;
+            let is_dev = dependency.is_dev();
             match workspace.member(&dependency.name) {
                 Some(target) => internal(workspace, member, tier, target, is_dev, &mut violations),
                 None => external(member, tier, dependency, is_dev, &mut violations),
