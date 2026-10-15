@@ -5,7 +5,7 @@ description: Implement business rules, calculations, money arithmetic, validatio
 
 # Write engine rules
 
-Engines are the pure core of a context ([`billing-engine`](../../../crates/domains/billing-engine) is the reference). They make the hardest logic the cheapest to test: there is no database, no async, and the suite runs in milliseconds.
+Engines are the pure core of a context (`cargo rusticate new domain` creates one next to every context). They make the hardest logic the cheapest to test: there is no database, no async, and the suite runs in milliseconds.
 
 ## Constraints (enforced)
 
@@ -30,7 +30,7 @@ pub fn quote_shipping(input: &ShippingInput) -> Result<ShippingQuote, EngineErro
 ```
 
 - One `EngineError` enum per engine, with **one variant per rule**, carrying the data needed for a good message (`TooManyLines { max }`). The context maps each variant to a stable `error_code` in `error.rs`.
-- **Lifecycles** are enums with one exhaustive `apply(self, action) -> Result<Self, EngineError>` and **no `_ =>` arm**, so a new state or action will not compile until every transition is decided ([`InvoiceStatus::apply`](../../../crates/domains/billing-engine/src/invoice.rs)).
+- **Lifecycles** are enums with one exhaustive `apply(self, action) -> Result<Self, EngineError>` and **no `_ =>` arm**, so a new state or action will not compile until every transition is decided.
 - **Rounding** happens once, at a documented point, half-to-even (`Money::apply_rate`). Rounding per line lets error accumulate.
 - Keep amounts within ±(2⁵³−1) (`MAX_MINOR`): JSON clients parse numbers as doubles.
 
@@ -69,3 +69,9 @@ Run with `cargo rusticate test -p <ctx>-engine`.
 ## Using the engine from a workflow
 
 The workflow loads facts (settings, current state) inside the transaction, calls the engine, and persists the result. When an engine input comes from the database, convert it with domain constructors and map failures to `<Ctx>Error::Corrupt`.
+<!-- rusticate:module(example):start -->
+
+## Example
+
+[`billing-engine`](../../../crates/domains/billing-engine) applies every rule above: integer money with a currency, a lifecycle ([`InvoiceStatus::apply`](../../../crates/domains/billing-engine/src/invoice.rs)), and property tests against an independent decimal oracle.
+<!-- rusticate:module(example):end -->

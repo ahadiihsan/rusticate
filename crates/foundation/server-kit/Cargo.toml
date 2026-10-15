@@ -9,8 +9,6 @@ publish.workspace = true
 [dependencies]
 api-kit.workspace = true
 axum.workspace = true
-datastore.workspace = true
-futures.workspace = true
 http.workspace = true
 serde.workspace = true
 serde_json.workspace = true

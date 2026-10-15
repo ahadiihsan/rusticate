@@ -6,9 +6,12 @@
 //! Cargo runs `cargo rusticate <args>` as `cargo-rusticate rusticate <args>`;
 //! running the binary directly (`cargo-rusticate <args>`) works too.
 
+mod blocks;
 mod generate;
 mod git;
 mod identity;
+mod links;
+mod modules;
 mod name;
 mod project;
 mod template;
@@ -22,6 +25,7 @@ use anyhow::{Context as _, Result};
 use clap::{Args, Parser, Subcommand};
 
 use crate::generate::{Plan, Report};
+use crate::modules::Request;
 use crate::name::{Owner, ProjectName};
 use crate::project::Route;
 use crate::template::Source;
@@ -67,6 +71,10 @@ enum Command {
 }
 
 #[derive(Debug, Args)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "independent command-line switches, parsed by clap"
+)]
 struct Common {
     /// GitHub user or organisation that will own the repository (CODEOWNERS, SECURITY.md).
     #[arg(long)]
@@ -80,6 +88,21 @@ struct Common {
     /// Do not initialise a git repository.
     #[arg(long)]
     no_git: bool,
+    /// Include these optional modules (comma-separated or repeated), e.g. `--with postgres`.
+    #[arg(long, value_name = "MODULE", value_delimiter = ',')]
+    with: Vec<String>,
+    /// Leave these modules out, and every module that needs them, e.g. `--without messaging`.
+    #[arg(long, value_name = "MODULE", value_delimiter = ',')]
+    without: Vec<String>,
+    /// Start from core only (HTTP API, auth, telemetry, tooling); add modules with --with.
+    #[arg(long, conflicts_with = "all")]
+    minimal: bool,
+    /// Leave out the example (same as --without example).
+    #[arg(long)]
+    bare: bool,
+    /// Include every module without asking.
+    #[arg(long)]
+    all: bool,
 }
 
 fn main() -> ExitCode {
@@ -142,11 +165,21 @@ fn run(command: Command) -> Result<()> {
 }
 
 fn plan(name: ProjectName, common: Common) -> Result<Plan> {
+    let mut without = common.without;
+    if common.bare {
+        without.push("example".to_owned());
+    }
     Ok(Plan {
         name,
         owner: common.owner.as_deref().map(Owner::parse).transpose()?,
         source: Source::resolve(&common.template, common.git_ref)?,
         init_git: !common.no_git,
+        modules: Request {
+            with: common.with,
+            without,
+            minimal: common.minimal,
+        },
+        interactive: !common.all && modules::can_ask(),
     })
 }
 
@@ -158,8 +191,13 @@ fn dir_name(dir: &Path) -> Result<String> {
 }
 
 fn print_report(plan: &Plan, report: &Report, created: Option<&Path>) {
+    let modules = if report.modules.is_empty() {
+        String::new()
+    } else {
+        format!("{}; ", report.modules)
+    };
     println!(
-        "✓ {} created from {} ({} files, {} renamed{})",
+        "✓ {} created from {} ({modules}{} files, {} renamed{})",
         plan.name.as_str(),
         plan.source.describe(),
         report.files,
@@ -170,6 +208,9 @@ fn print_report(plan: &Plan, report: &Report, created: Option<&Path>) {
             ""
         },
     );
+    if !report.formatted {
+        eprintln!("warning: rustfmt could not run; format the project with `cargo fmt --all`");
+    }
     if plan.owner.is_none() {
         eprintln!(
             "warning: no --owner given: CODEOWNERS and SECURITY.md name `{}`; \
@@ -181,8 +222,10 @@ fn print_report(plan: &Plan, report: &Report, created: Option<&Path>) {
     if let Some(dir) = created {
         println!("  cd {}", dir.display());
     }
-    println!("  cargo rusticate setup     # git hooks; lists any missing tool");
-    println!("  cargo rusticate db up     # Postgres and NATS in Docker");
+    println!("  cargo rusticate setup     # git hooks, missing tools, the API contract");
+    if report.has_database {
+        println!("  cargo rusticate db up     # local services in Docker");
+    }
     println!("  cargo rusticate verify    # the definition of done");
     println!("\nThen read AGENTS.md: it is the operating manual for people and coding agents.");
 }

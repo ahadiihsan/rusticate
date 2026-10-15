@@ -5,7 +5,7 @@
 # Its version is the template version it creates projects from (tag v<version>).
 [package]
 name = "cargo-rusticate"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Start a production-ready multi-tenant Rust backend from the rusticate boilerplate: `cargo rusticate new my-service`."
@@ -23,6 +23,8 @@ include = ["src/**/*.rs", "tests/**/*.rs", "Cargo.toml", "Cargo.lock", "README.m
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.50", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+toml = { version = "0.9.8", default-features = false, features = ["parse", "serde"] }
 
 [lints.rust]
 unsafe_code = "forbid"

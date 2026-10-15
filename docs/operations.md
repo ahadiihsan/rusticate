@@ -2,12 +2,19 @@
 
 ## Deploying a release
 
+<!-- rusticate:module(postgres):start -->
 1. **Migrate.** Run the [`migrate` Job](../deploy/k8s/migrate-job.yaml) with the new image (`api migrate`, `app_owner` credentials) and wait for success. Migrations are expand-only relative to the running version (DB-011), so the old pods keep working.
+<!-- rusticate:module(postgres):end -->
 2. **API.** Rolling update with `maxUnavailable: 0`. New pods receive traffic only when `/health/ready` passes (startup probe), and old pods drain (OPS-003).
+<!-- rusticate:module(messaging):start -->
 3. **Worker.** Rolling update. The relay leader moves to another replica within one poll interval; consumers rebalance automatically.
-4. **Contract steps** (dropping old columns, old event versions) ship in a *later* release, after every consumer has moved.
+<!-- rusticate:module(messaging):end -->
+4. **Contract steps** (removing old API fields, columns or event versions) ship in a *later* release, after every client and consumer has moved.
 
-**Rollback:** redeploy the previous image. Never roll back a migration; fix forward. Expand-only migrations make the previous version compatible with the new schema.
+**Rollback:** redeploy the previous image.
+<!-- rusticate:module(postgres):start -->
+Never roll back a migration; fix forward. Expand-only migrations make the previous version compatible with the new schema.
+<!-- rusticate:module(postgres):end -->
 
 ## Probes and shutdown
 
@@ -20,7 +27,9 @@ On SIGTERM:
 
 1. Readiness turns 503 for `drain_delay` (5 s) while the listener keeps serving.
 2. The listener closes and in-flight requests get up to `shutdown_timeout` (20 s).
+<!-- rusticate:module(messaging):start -->
 3. The worker finishes its current batch or message.
+<!-- rusticate:module(messaging):end -->
 
 Keep `terminationGracePeriodSeconds` (60 s) above the sum. No `preStop` hook is needed: the images have no shell.
 
@@ -29,19 +38,36 @@ Keep `terminationGracePeriodSeconds` (60 s) above the sum. No `preStop` hook is 
 | Signal | Source | Alert when |
 |---|---|---|
 | HTTP 5xx rate and p99 latency per route | request spans (`http.route`, status) | 5xx > 1 % for 5 min; p99 above SLO |
-| 503 `OVERLOADED` / `DATABASE_UNAVAILABLE` | problem `error_code` in logs | sustained: scale out or raise pool size |
+| 503 `OVERLOADED` | problem `error_code` in logs | sustained: scale out |
+
+<!-- rusticate:module(postgres):start -->
+With PostgreSQL:
+
+| Signal | Source | Alert when |
+|---|---|---|
+| 503 `DATABASE_UNAVAILABLE` | problem `error_code` in logs | sustained: raise pool size or check the database |
+| RLS or role errors | log `row-level security` / `RoleMisconfigured` | any: treat as a security incident |
+| Long transactions | `pg_stat_activity` where `xact_start < now() - interval '1 min'` | any (vacuum stalls, lock contention) |
+| Idempotency/inbox table growth | row counts | retention not running (maintenance task) |
+
+<!-- rusticate:module(postgres):end -->
+<!-- rusticate:module(messaging):start -->
+With messaging:
+
+| Signal | Source | Alert when |
+|---|---|---|
 | Outbox backlog | `SELECT count(*), min(occurred_at) FROM platform.outbox_events` (as `app_system`) | oldest event > 1 min: relay down or broker unreachable |
 | Relay failures | log `outbox relay batch failed` | any, sustained |
 | Consumer lag | JetStream consumer `num_pending` per durable | growing for 10 min |
 | Terminated (dead-lettered) messages | JetStream advisory `$JS.EVENT.ADVISORY.CONSUMER.MSG_TERMINATED.>` | any |
-| RLS or role errors | log `row-level security` / `RoleMisconfigured` | any: treat as a security incident |
-| Long transactions | `pg_stat_activity` where `xact_start < now() - interval '1 min'` | any (vacuum stalls, lock contention) |
-| Idempotency/inbox table growth | row counts | retention not running (maintenance task) |
+
+<!-- rusticate:module(messaging):end -->
 
 Every error response carries `trace_id` and `request_id`. Start any investigation by searching for them.
 
 ## Runbooks
 
+<!-- rusticate:module(messaging):start -->
 **Outbox backlog growing.**
 1. Check worker `/health/ready` (database_system, nats).
 2. Check the relay logs.
@@ -53,7 +79,9 @@ Every error response carries `trace_id` and `request_id`. Start any investigatio
 3. Republish the event from its source (it is still in the stream for 7 days) or apply the effect with a corrective workflow.
 
 Do not loosen retry limits to make failures disappear.
+<!-- rusticate:module(messaging):end -->
 
+<!-- rusticate:module(postgres):start -->
 **Suspected cross-tenant exposure.**
 1. Confirm the service role posture: `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user` must return `false, false` for `app_rw`.
 2. Run the schema guard (`cargo rusticate test -p api -- schema_guard`) against a restore of production DDL.
@@ -63,6 +91,7 @@ Do not loosen retry limits to make failures disappear.
 1. Look for long transactions; `idle_in_transaction_session_timeout` kills leaked ones after 15 s.
 2. Look for slow queries (`statement_timeout` 5 s).
 3. Look for a traffic spike. Scale horizontally only if Postgres has headroom; otherwise add PgBouncer in transaction mode (transaction-local tenant binding is compatible with it).
+<!-- rusticate:module(postgres):end -->
 
 ## Repository settings (GitHub)
 

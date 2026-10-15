@@ -16,6 +16,9 @@ proc-macro2.workspace = true
 regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# rusticate:module(postgres):start
+sha2.workspace = true
+# rusticate:module(postgres):end
 syn.workspace = true
 toml.workspace = true
 uuid.workspace = true

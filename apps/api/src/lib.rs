@@ -4,5 +4,7 @@
 
 pub mod app;
 pub mod config;
+// rusticate:module(postgres):start
 pub mod migrate;
+// rusticate:module(postgres):end
 pub mod openapi;

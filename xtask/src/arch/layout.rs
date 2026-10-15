@@ -19,13 +19,15 @@ pub fn check(workspace: &Workspace) -> Result<Vec<Violation>> {
         .iter()
         .filter_map(|m| owned_schema(m).ok().flatten())
         .collect();
+    // Without the postgres module (ADR 0002) features have no SQL to keep.
+    let has_database = workspace.member("datastore").is_some();
     for member in workspace.members.iter().filter(|m| !m.exempt) {
         lints_wired(member, &mut violations)?;
         if member.tier == "engine" {
             engine_guardrails(member, &mut violations)?;
         }
         if member.tier == "domain" {
-            feature_slices(member, &mut violations)?;
+            feature_slices(member, has_database, &mut violations)?;
         }
         if member.has_migrations() {
             migrations(member, &known_schemas, &mut violations)?;
@@ -106,10 +108,15 @@ fn engine_guardrails(member: &Member, violations: &mut Vec<Violation>) -> Result
 
 /// ARCH-004..ARCH-006, ARCH-009, TEST-002, TEST-005: the shape of every
 /// feature slice in a context.
-fn feature_slices(member: &Member, violations: &mut Vec<Violation>) -> Result<()> {
+fn feature_slices(
+    member: &Member,
+    has_database: bool,
+    violations: &mut Vec<Violation>,
+) -> Result<()> {
     let src = member.abs_dir.join("src");
     let context = Context {
         member,
+        has_database,
         lib: std::fs::read_to_string(src.join("lib.rs"))?,
         tests: read_all(&member.abs_dir.join("tests"))?,
     };
@@ -146,6 +153,8 @@ fn feature_slices(member: &Member, violations: &mut Vec<Violation>) -> Result<()
 /// What every feature check of one context needs.
 struct Context<'a> {
     member: &'a Member,
+    /// Whether the project has a database, so every feature a `db.rs`.
+    has_database: bool,
     lib: String,
     /// Concatenated text of every file under `tests/`.
     tests: String,
@@ -162,13 +171,15 @@ fn check_feature(
     let location = format!("{dir}/src/{stem}.rs");
     let file = syn::parse_file(&std::fs::read_to_string(path)?)?;
 
-    private_sql_module(
-        &file,
-        &feature_dir,
-        &location,
-        &format!("{dir}/src/{stem}/db.rs"),
-        violations,
-    )?;
+    if context.has_database {
+        private_sql_module(
+            &file,
+            &feature_dir,
+            &location,
+            &format!("{dir}/src/{stem}/db.rs"),
+            violations,
+        )?;
+    }
 
     // ARCH-006 / OBS-001 / SEC-003 / TEST-005: entry workflows.
     let workflows: Vec<&syn::ItemFn> = file

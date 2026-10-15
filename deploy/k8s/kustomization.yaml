@@ -3,6 +3,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  # rusticate:module(postgres):start
   - migrate-job.yaml
+  # rusticate:module(postgres):end
   - api.yaml
+  # rusticate:module(messaging):start
   - worker.yaml
+  # rusticate:module(messaging):end

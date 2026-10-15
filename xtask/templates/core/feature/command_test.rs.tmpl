@@ -1,0 +1,27 @@
+use op_context::testing as ctx;
+use {{domain_ident}}::permissions::{{PERMISSION}};
+use {{domain_ident}}::{{feature}}::{{{Feature}}Cmd, {{feature}}};
+use {{domain_ident}}::{{Domain}}Error;
+
+fn cmd() -> {{Feature}}Cmd {
+    {{Feature}}Cmd {
+        reference: "ref-1".to_owned(),
+    }
+}
+
+#[tokio::test]
+async fn {{feature}}_requires_its_permission() {
+    let outcome = {{feature}}(&ctx::user(ctx::tenant(), &[]), cmd()).await;
+
+    assert!(matches!(outcome, Err({{Domain}}Error::Forbidden(_))));
+}
+
+#[tokio::test]
+async fn {{feature}}_returns_the_result() {
+    let user = ctx::user(ctx::tenant(), &[{{PERMISSION}}]);
+
+    let result = {{feature}}(&user, cmd()).await.unwrap();
+
+    assert_eq!(result.reference, "ref-1");
+    // SCAFFOLD: assert the behaviour and every failure mode.
+}

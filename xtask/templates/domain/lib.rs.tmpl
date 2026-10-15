@@ -3,13 +3,15 @@
 //! SCAFFOLD: one paragraph in the ubiquitous language: what this context
 //! owns, and what it deliberately does not.
 //!
-//! Feature slices follow the shape of the `billing` reference context
-//! (SOP §4): `<feature>.rs` workflow, `<feature>/http.rs` adapter,
-//! `<feature>/db.rs` private SQL. Add them with
+//! Feature slices (SOP §4): `<feature>.rs` holds the workflow,
+//! `<feature>/http.rs` the HTTP adapter, `<feature>/db.rs` the private SQL.
+//! Add them with
 //! `cargo rusticate new feature {{domain}} <verb_noun>`.
 
 mod error;
+// rusticate:module(messaging):start
 pub mod events;
+// rusticate:module(messaging):end
 pub mod permissions;
 
 // xtask:features

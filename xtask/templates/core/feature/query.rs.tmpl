@@ -1,0 +1,31 @@
+//! `GET /v1/{{domain_kebab}}/{{feature_kebab}}`.
+//!
+//! SCAFFOLD: describe what is read and for whom.
+
+pub(crate) mod http;
+
+use op_context::OpCtx;
+use uuid::Uuid;
+
+use crate::{permissions, {{Domain}}Error};
+
+/// SCAFFOLD: the read model returned to callers.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct {{Feature}}View {
+    pub tenant_id: Uuid,
+}
+
+/// HOP 2: read-only workflow.
+#[tracing::instrument(
+    name = "{{domain}}.{{feature}}",
+    skip_all,
+    fields(tenant_id = %ctx.tenant_id(), actor_id = %ctx.actor_id())
+)]
+pub async fn {{feature}}(ctx: &OpCtx) -> Result<{{Feature}}View, {{Domain}}Error> {
+    ctx.require(permissions::{{PERMISSION}})?;
+
+    // SCAFFOLD: build the view.
+    Ok({{Feature}}View {
+        tenant_id: ctx.tenant_id().as_uuid(),
+    })
+}

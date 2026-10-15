@@ -3,11 +3,15 @@
 //! `APP_DATABASE__URL`), validated, then passed down explicitly. Nothing else
 //! in the process reads the environment.
 
+// rusticate:module(postgres):start
 use datastore::DataStoreConfig;
+// rusticate:module(postgres):end
 use figment::Figment;
 use figment::providers::Env;
 use iam::AuthConfig;
+// rusticate:module(postgres):start
 use secrecy::SecretString;
+// rusticate:module(postgres):end
 use serde::Deserialize;
 use server_kit::HttpConfig;
 use telemetry::TelemetryConfig;
@@ -29,11 +33,13 @@ pub struct Config {
     pub environment: Environment,
     #[serde(default)]
     pub http: HttpConfig,
+    // rusticate:module(postgres):start
     /// Runtime connection: the RLS-bound `app_rw` role.
     pub database: DataStoreConfig,
     /// Owner connection, used only by the `migrate` command.
     #[serde(default)]
     pub migration_database_url: Option<SecretString>,
+    // rusticate:module(postgres):end
     pub auth: AuthConfig,
     #[serde(default)]
     pub telemetry: TelemetryConfig,
@@ -87,8 +93,10 @@ mod tests {
     use super::*;
 
     const BASE: &str = r#"
+        # rusticate:module(postgres):start
         [database]
         url = "postgres://app_rw@localhost/db"
+        # rusticate:module(postgres):end
         [auth]
         issuer = "iss"
         audience = "aud"

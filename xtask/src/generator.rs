@@ -79,8 +79,21 @@ pub fn msrv() -> Result<()> {
     ))
 }
 
-/// Generates a project from this checkout and runs its own `verify --fast`:
-/// proof that what users get builds, lints and passes the architecture check.
+/// Every module combination a project can be generated with (ADR 0002).
+const COMBINATIONS: [(&str, &[&str]); 4] = [
+    ("core", &["--minimal"]),
+    ("postgres", &["--minimal", "--with", "postgres"]),
+    ("bare", &["--bare"]),
+    ("full", &["--all"]),
+];
+
+/// Generates a project from this checkout for every module combination and
+/// runs what a user runs first: proof that every project users can get
+/// builds, lints and passes the architecture check.
+///
+/// The core project also runs its tests (they need no database) and builds
+/// freshly scaffolded features: its scaffold templates are exercised nowhere
+/// else.
 pub fn smoke() -> Result<()> {
     let target = workspace::root().join("target");
     let out = target.join("generator-smoke");
@@ -88,21 +101,47 @@ pub fn smoke() -> Result<()> {
         std::fs::remove_dir_all(&out).with_context(|| format!("removing {}", out.display()))?;
     }
     std::fs::create_dir_all(&out).with_context(|| format!("creating {}", out.display()))?;
-    let project = out.join(SMOKE_PROJECT);
+    for (name, flags) in COMBINATIONS {
+        let project = out.join(format!("{name}-{SMOKE_PROJECT}"));
+        let mut generate = cargo(&["run", "--quiet"], &["--locked", "--"]);
+        generate
+            .arg("new")
+            .arg(format!("{name}-{SMOKE_PROJECT}"))
+            .args(["--owner", "smoke-owner", "--no-git", "--template"])
+            .arg(workspace::root())
+            .arg("--path")
+            .arg(&project)
+            .args(flags);
+        sh::run(generate)?;
 
-    let mut generate = cargo(&["run", "--quiet"], &["--locked", "--"]);
-    generate
-        .args(["new", SMOKE_PROJECT, "--owner", "smoke-owner", "--template"])
-        .arg(workspace::root())
-        .arg("--path")
-        .arg(&project);
-    sh::run(generate)?;
-
-    let mut verify = sh::cargo(["xtask", "verify", "--fast"]);
-    // A separate target dir: same-named packages from two workspaces must
-    // not overwrite each other's binaries.
-    verify
-        .current_dir(&project)
-        .env("CARGO_TARGET_DIR", target.join("smoke-build"));
-    sh::run(verify)
+        // A separate target dir: same-named packages from two workspaces must
+        // not overwrite each other's binaries.
+        let in_project = |args: &[&str]| {
+            let mut cmd = sh::cargo(args);
+            cmd.current_dir(&project)
+                .env("CARGO_TARGET_DIR", target.join("smoke-build"));
+            sh::run(cmd)
+        };
+        in_project(&["xtask", "openapi"])?;
+        in_project(&["xtask", "verify", "--fast"])?;
+        if name == "core" {
+            in_project(&["xtask", "test"])?;
+            in_project(&["xtask", "new", "domain", "smoke"])?;
+            in_project(&[
+                "xtask", "new", "feature", "smoke", "do_thing", "--kind", "command",
+            ])?;
+            in_project(&[
+                "xtask",
+                "new",
+                "feature",
+                "smoke",
+                "read_thing",
+                "--kind",
+                "query",
+            ])?;
+            in_project(&["xtask", "lint"])?;
+            in_project(&["xtask", "test", "-p", "smoke"])?;
+        }
+    }
+    Ok(())
 }

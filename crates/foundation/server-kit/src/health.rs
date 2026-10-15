@@ -2,40 +2,13 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
+pub use api_kit::{CheckFuture, ReadinessCheck};
 use axum::Router;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
-use datastore::{DataStore, SystemStore};
-use futures::future::BoxFuture;
 
 const CHECK_TIMEOUT: Duration = Duration::from_secs(2);
-
-/// A dependency that must be reachable for the instance to receive traffic.
-pub trait ReadinessCheck: Send + Sync + 'static {
-    fn name(&self) -> &'static str;
-    fn check(&self) -> BoxFuture<'_, Result<(), String>>;
-}
-
-impl ReadinessCheck for DataStore {
-    fn name(&self) -> &'static str {
-        "database"
-    }
-
-    fn check(&self) -> BoxFuture<'_, Result<(), String>> {
-        Box::pin(async move { self.ping().await.map_err(|err| err.to_string()) })
-    }
-}
-
-impl ReadinessCheck for SystemStore {
-    fn name(&self) -> &'static str {
-        "database_system"
-    }
-
-    fn check(&self) -> BoxFuture<'_, Result<(), String>> {
-        Box::pin(async move { self.ping().await.map_err(|err| err.to_string()) })
-    }
-}
 
 /// Liveness and readiness probes (OPS-002).
 ///
@@ -124,7 +97,7 @@ mod tests {
             "broker"
         }
 
-        fn check(&self) -> BoxFuture<'_, Result<(), String>> {
+        fn check(&self) -> CheckFuture<'_> {
             Box::pin(async { Err("down".to_owned()) })
         }
     }

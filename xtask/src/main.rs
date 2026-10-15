@@ -6,9 +6,13 @@
 //! git hooks and machines without cargo-rusticate run `cargo xtask <command>`.
 
 mod arch;
+// rusticate:module(postgres):start
 mod db;
+// rusticate:module(postgres):end
 mod dev_env;
+// rusticate:template-only:start
 mod generator;
+// rusticate:template-only:end
 mod metadata;
 mod scaffold;
 mod sh;
@@ -64,11 +68,13 @@ enum Command {
         #[arg(long, default_value_t = 80)]
         fail_under: u8,
     },
-    /// Local Postgres and NATS.
+    // rusticate:module(postgres):start
+    /// Local services (Docker): Postgres, and NATS with messaging.
     Db {
         #[command(subcommand)]
         action: DbAction,
     },
+    // rusticate:module(postgres):end
     /// Regenerate the committed OpenAPI contract (`--check` only verifies).
     Openapi {
         #[arg(long)]
@@ -99,6 +105,7 @@ enum Command {
     },
 }
 
+// rusticate:module(postgres):start
 #[derive(Debug, Subcommand)]
 enum DbAction {
     /// Start Postgres and NATS and wait until healthy.
@@ -115,6 +122,7 @@ enum DbAction {
         check: bool,
     },
 }
+// rusticate:module(postgres):end
 
 #[derive(Debug, Subcommand)]
 enum NewWhat {
@@ -148,6 +156,7 @@ fn run(cli: Cli) -> Result<()> {
         Command::Lint => lint(),
         Command::Test { args } => test(&args, false),
         Command::Coverage { fail_under } => coverage(fail_under),
+        // rusticate:module(postgres):start
         Command::Db { action } => match action {
             DbAction::Up => db::up(),
             DbAction::Down => db::down(),
@@ -155,6 +164,7 @@ fn run(cli: Cli) -> Result<()> {
             DbAction::Migrate => db::migrate(),
             DbAction::Prepare { check } => db::prepare(check),
         },
+        // rusticate:module(postgres):end
         Command::Openapi { check } => openapi(check),
         Command::New { what } => match what {
             NewWhat::Domain { name } => scaffold::domain(&name),
@@ -177,26 +187,38 @@ fn setup() -> Result<()> {
     sh::run(sh::cmd("git", ["config", "core.hooksPath", ".githooks"]))?;
     let mut missing = Vec::new();
     for (tool, install) in [
-        ("cargo-rusticate", "cargo install --locked cargo-rusticate"),
         ("cargo-nextest", "cargo install --locked cargo-nextest"),
         ("cargo-deny", "cargo install --locked cargo-deny"),
         ("cargo-llvm-cov", "cargo install --locked cargo-llvm-cov"),
+        // rusticate:module(postgres):start
         (
             "sqlx",
             "cargo install sqlx-cli --no-default-features --features postgres,rustls,sqlx-toml",
         ),
         ("docker", "https://docs.docker.com/get-docker/"),
+        // rusticate:module(postgres):end
     ] {
         if !sh::available(tool) {
             missing.push(format!("  {tool:<16} {install}"));
         }
     }
-    if missing.is_empty() {
-        println!("✓ setup complete: git hooks installed, all tools present");
-        Ok(())
-    } else {
-        anyhow::bail!("missing tools:\n{}", missing.join("\n"))
+    anyhow::ensure!(missing.is_empty(), "missing tools:\n{}", missing.join("\n"));
+    if !sh::available("cargo-rusticate") {
+        println!(
+            "tip: `cargo install --locked cargo-rusticate` lets you run every command as \
+             `cargo rusticate <command>` (`cargo xtask <command>` works without it)"
+        );
     }
+    // A project generated with fewer modules starts with the template's
+    // formatting and contract; make both match this project.
+    fmt(false)?;
+    if openapi(true).is_err() {
+        openapi(false)?;
+    }
+    println!(
+        "✓ setup complete: git hooks installed, all tools present, code formatted, API contract current"
+    );
+    Ok(())
 }
 
 fn fmt(check: bool) -> Result<()> {
@@ -205,9 +227,11 @@ fn fmt(check: bool) -> Result<()> {
         args.extend(["--", "--check"]);
     }
     sh::run(sh::cargo(args))?;
+    // rusticate:template-only:start
     if generator::present() {
         generator::fmt(check)?;
     }
+    // rusticate:template-only:end
     Ok(())
 }
 
@@ -281,16 +305,20 @@ fn verify(fast: bool) -> Result<()> {
     sh::step("format", || fmt(true))?;
     sh::step("architecture", arch::run)?;
     sh::step("lint", lint)?;
+    // rusticate:template-only:start
     if generator::present() {
         sh::step("generator (cargo-rusticate)", generator::check)?;
     }
+    // rusticate:template-only:end
     if fast {
         println!(
-            "\n✓ verify --fast passed (database tests skipped: run `cargo rusticate verify` before finishing)"
+            "\n✓ verify --fast passed (tests skipped: run `cargo rusticate verify` before finishing)"
         );
         return Ok(());
     }
+    // rusticate:module(postgres):start
     sh::step("query metadata", || db::prepare(true))?;
+    // rusticate:module(postgres):end
     sh::step("tests", || test(&[], false))?;
     println!("\n✓ verify passed");
     Ok(())
@@ -305,9 +333,12 @@ fn ci() -> Result<()> {
         sh::run(sh::cargo(["deny", "--all-features", "check"]))
     })?;
     sh::step("openapi contract", || openapi(true))?;
+    // rusticate:module(postgres):start
     sh::step("migrate", db::migrate)?;
     sh::step("query metadata", || db::prepare(true))?;
+    // rusticate:module(postgres):end
     sh::step("tests", || test(&[], true))?;
+    // rusticate:template-only:start
     if generator::present() {
         sh::step("generator (cargo-rusticate)", generator::check)?;
         sh::step("generator dependencies (cargo-deny)", generator::deny)?;
@@ -317,6 +348,7 @@ fn ci() -> Result<()> {
             generator::smoke,
         )?;
     }
+    // rusticate:template-only:end
     println!("\n✓ ci passed");
     Ok(())
 }

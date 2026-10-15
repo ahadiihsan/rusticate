@@ -5,19 +5,18 @@
 //! occurrence is rewritten, except:
 //! - permalinks into the template's history, which must keep pointing there;
 //! - the generator's own name (`cargo-rusticate`, `cargo rusticate`);
-//! - blocks between template-only markers, which are removed entirely.
 //!
 //! Any other spelling (`RUSTICATE`, a bare `ahadiihsan`) is an error: the
 //! template gained an occurrence these rules do not cover, and leaving it
 //! would ship the template's identity inside someone else's project.
 
-use std::borrow::Cow;
 use std::fmt;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result, ensure};
 
+use crate::blocks::{self, Block};
 use crate::name::{Owner, ProjectName};
 use crate::tree;
 
@@ -33,11 +32,6 @@ const PROTECTED: [&str; 3] = [
     "cargo-rusticate",
     "cargo rusticate",
 ];
-
-/// Lines (on their own) that delimit content only the template repository has,
-/// such as how to install this generator.
-const TEMPLATE_ONLY_START: &str = "<!-- rusticate:template-only:start -->";
-const TEMPLATE_ONLY_END: &str = "<!-- rusticate:template-only:end -->";
 
 /// Written where the owner is unknown, so it is easy to find and replace.
 pub(crate) const OWNER_PLACEHOLDER: &str = "OWNER";
@@ -55,6 +49,20 @@ pub(crate) struct Identity {
 pub(crate) struct Problem {
     line: usize,
     message: String,
+}
+
+impl Problem {
+    pub(crate) fn new(line: usize, message: impl Into<String>) -> Self {
+        Self {
+            line,
+            message: message.into(),
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn line(&self) -> usize {
+        self.line
+    }
 }
 
 impl fmt::Display for Problem {
@@ -76,9 +84,8 @@ impl Identity {
 
     /// The file's content for the new project.
     pub(crate) fn render(&self, text: &str) -> Result<String, Problem> {
-        let text = strip_template_only(text)?;
-        check_covered(&text)?;
-        Ok(self.rewrite(&text))
+        check_covered(text)?;
+        Ok(self.rewrite(text))
     }
 
     /// One left-to-right pass: each match is replaced (or kept, if protected)
@@ -106,9 +113,14 @@ impl Identity {
         out
     }
 
-    /// Renders every text file under `root` in place and returns how many
-    /// changed. Nothing is written unless every file renders.
-    pub(crate) fn apply_to_tree(&self, root: &Path) -> Result<usize> {
+    /// Removes the blocks `keep` rejects, then renders every text file under
+    /// `root` in place, and returns the files that changed. Nothing is
+    /// written unless every file succeeds.
+    pub(crate) fn apply_to_tree(
+        &self,
+        root: &Path,
+        keep: &dyn Fn(&Block) -> Result<bool, String>,
+    ) -> Result<Vec<PathBuf>> {
         let mut problems = Vec::new();
         let mut changes = Vec::new();
         for entry in tree::entries(root)? {
@@ -124,7 +136,8 @@ impl Identity {
             let Ok(text) = String::from_utf8(bytes) else {
                 continue; // binary: nothing to rename
             };
-            match self.render(&text) {
+            let rendered = blocks::strip(&text, keep).and_then(|kept| self.render(&kept));
+            match rendered {
                 Ok(rendered) if rendered != text => changes.push((path, rendered)),
                 Ok(_) => {}
                 Err(problem) => problems.push(format!("{shown}: {problem}")),
@@ -132,14 +145,14 @@ impl Identity {
         }
         ensure!(
             problems.is_empty(),
-            "the template has identity the generator does not cover (fix the template, \
-             see cargo-rusticate/src/identity.rs):\n  {}",
+            "the template has content the generator cannot process (fix the template; \
+             see cargo-rusticate/src/identity.rs and blocks.rs):\n  {}",
             problems.join("\n  ")
         );
         for (path, text) in &changes {
             fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
         }
-        Ok(changes.len())
+        Ok(changes.into_iter().map(|(path, _)| path).collect())
     }
 }
 
@@ -181,41 +194,6 @@ fn check_covered(text: &str) -> Result<(), Problem> {
                 residue.get(at..at + len).unwrap_or_default()
             ),
         }),
-    }
-}
-
-/// Removes template-only blocks. Markers must sit on their own lines and pair up.
-fn strip_template_only(text: &str) -> Result<Cow<'_, str>, Problem> {
-    if !text.contains(TEMPLATE_ONLY_START) && !text.contains(TEMPLATE_ONLY_END) {
-        return Ok(Cow::Borrowed(text));
-    }
-    let mut kept = String::with_capacity(text.len());
-    let mut open_at = None;
-    for (index, line) in text.split_inclusive('\n').enumerate() {
-        let number = index + 1;
-        let marker = line.trim();
-        let problem = |message: &str| Problem {
-            line: number,
-            message: message.to_owned(),
-        };
-        match (marker, open_at) {
-            (TEMPLATE_ONLY_START, None) => open_at = Some(number),
-            (TEMPLATE_ONLY_START, Some(_)) => return Err(problem("nested template-only start")),
-            (TEMPLATE_ONLY_END, Some(_)) => open_at = None,
-            (TEMPLATE_ONLY_END, None) => return Err(problem("template-only end without a start")),
-            _ if line.contains(TEMPLATE_ONLY_START) || line.contains(TEMPLATE_ONLY_END) => {
-                return Err(problem("a template-only marker must be on its own line"));
-            }
-            (_, None) => kept.push_str(line),
-            (_, Some(_)) => {}
-        }
-    }
-    match open_at {
-        Some(line) => Err(Problem {
-            line,
-            message: "template-only start is never closed".to_owned(),
-        }),
-        None => Ok(Cow::Owned(kept)),
     }
 }
 
@@ -284,30 +262,5 @@ mod tests {
             .render("see github.com/ahadiihsan/other")
             .unwrap_err();
         assert!(err.message.contains("`ahadiihsan`"), "{err}");
-    }
-
-    #[test]
-    fn removes_template_only_blocks() {
-        let text = "intro\n\n<!-- rusticate:template-only:start -->\n## Install\n\
-                    cargo install cargo-rusticate\n\n<!-- rusticate:template-only:end -->\n## Next\n";
-        assert_eq!(identity(None).render(text).unwrap(), "intro\n\n## Next\n");
-    }
-
-    #[test]
-    fn rejects_malformed_template_only_markers() {
-        let start = TEMPLATE_ONLY_START;
-        let end = TEMPLATE_ONLY_END;
-        for (text, line) in [
-            (format!("a\n{start}\nb\n"), 2),
-            (format!("{end}\n"), 1),
-            (format!("{start}\n{start}\n{end}\n"), 2),
-            (format!("text {start}\n{end}\n"), 1),
-        ] {
-            assert_eq!(
-                identity(None).render(&text).unwrap_err().line,
-                line,
-                "{text}"
-            );
-        }
     }
 }

@@ -150,12 +150,14 @@ impl Workspace {
             .find(|tier| tier.name == name)
     }
 
+    // rusticate:module(postgres):start
     /// Crates that own a schema, in migration order: foundation first.
     pub fn schema_owners(&self) -> Vec<&Member> {
         let mut owners: Vec<&Member> = self.members.iter().filter(|m| m.has_migrations()).collect();
         owners.sort_by_key(|m| (m.tier != "foundation", m.dir.clone()));
         owners
     }
+    // rusticate:module(postgres):end
 }
 
 /// Minimal path glob: `*` matches within one path segment.
