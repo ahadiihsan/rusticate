@@ -39,7 +39,9 @@ pub fn spawn_all(deps: Deps, shutdown: &CancellationToken) -> JoinSet<anyhow::Re
 
     // Event consumers (MSG-004): one line per handler.
     // xtask:consumers
+    // rusticate:module(example):start
     spawn_consumer(&mut tasks, &deps, shutdown, billing::RecordInvoiceStats);
+    // rusticate:module(example):end
 
     tasks.spawn(maintenance_task(
         deps.system,
@@ -49,7 +51,9 @@ pub fn spawn_all(deps: Deps, shutdown: &CancellationToken) -> JoinSet<anyhow::Re
     tasks
 }
 
-fn spawn_consumer<H: EventHandler + 'static>(
+/// Runs one event handler as a durable `JetStream` consumer (MSG-004). Called once
+/// per handler from [`spawn_all`].
+pub fn spawn_consumer<H: EventHandler + 'static>(
     tasks: &mut JoinSet<anyhow::Result<()>>,
     deps: &Deps,
     shutdown: &CancellationToken,

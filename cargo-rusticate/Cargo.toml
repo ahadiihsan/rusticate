@@ -23,6 +23,8 @@ include = ["src/**/*.rs", "tests/**/*.rs", "Cargo.toml", "Cargo.lock", "README.m
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.50", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive"] }
+toml = { version = "0.9.8", default-features = false, features = ["parse", "serde"] }
 
 [lints.rust]
 unsafe_code = "forbid"

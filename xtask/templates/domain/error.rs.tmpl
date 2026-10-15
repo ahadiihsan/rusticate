@@ -1,7 +1,9 @@
 use api_kit::ApiError;
 use datastore::DataStoreError;
 use idempotency::IdempotencyError;
+// rusticate:module(messaging):start
 use messaging::HandlerError;
+// rusticate:module(messaging):end
 use op_context::AuthzError;
 use {{domain_ident}}_engine::EngineError;
 
@@ -45,6 +47,7 @@ impl From<{{Domain}}Error> for ApiError {
     }
 }
 
+// rusticate:module(messaging):start
 /// For event consumers: retry only what can succeed on retry.
 impl From<{{Domain}}Error> for HandlerError {
     fn from(err: {{Domain}}Error) -> Self {
@@ -54,3 +57,4 @@ impl From<{{Domain}}Error> for HandlerError {
         }
     }
 }
+// rusticate:module(messaging):end

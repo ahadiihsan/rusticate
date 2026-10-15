@@ -1,0 +1,26 @@
+[package]
+name = "{{domain}}"
+description = "{{Domain}} bounded context."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+api-kit.workspace = true
+axum.workspace = true
+{{domain}}-engine.workspace = true
+op-context = { workspace = true, features = ["axum"] }
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+utoipa.workspace = true
+utoipa-axum.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+op-context = { workspace = true, features = ["axum", "mint"] }
+tokio.workspace = true
+
+[lints]
+workspace = true

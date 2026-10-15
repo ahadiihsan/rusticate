@@ -14,18 +14,26 @@ path = "src/main.rs"
 anyhow.workspace = true
 api-kit.workspace = true
 axum.workspace = true
+# rusticate:module(example):start
 billing.workspace = true
+# rusticate:module(example):end
 # xtask:contexts (`cargo rusticate new domain` adds mounted contexts here)
 clap.workspace = true
+# rusticate:module(postgres):start
 datastore.workspace = true
+# rusticate:module(postgres):end
 figment.workspace = true
 iam.workspace = true
 mimalloc.workspace = true
+# rusticate:module(postgres):start
 secrecy.workspace = true
+# rusticate:module(postgres):end
 serde.workspace = true
 serde_json.workspace = true
 server-kit.workspace = true
+# rusticate:module(postgres):start
 sqlx.workspace = true
+# rusticate:module(postgres):end
 telemetry.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -36,7 +44,9 @@ utoipa-axum.workspace = true
 http-body-util.workspace = true
 iam = { workspace = true, features = ["dev-tokens"] }
 op-context.workspace = true
+# rusticate:module(postgres):start
 test-kit.workspace = true
+# rusticate:module(postgres):end
 tower.workspace = true
 uuid.workspace = true
 

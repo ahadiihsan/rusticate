@@ -12,7 +12,9 @@ axum.workspace = true
 datastore.workspace = true
 {{domain}}-engine.workspace = true
 idempotency.workspace = true
+# rusticate:module(messaging):start
 messaging.workspace = true
+# rusticate:module(messaging):end
 op-context = { workspace = true, features = ["axum"] }
 serde.workspace = true
 serde_json.workspace = true

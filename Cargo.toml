@@ -21,17 +21,25 @@ publish = false
 [workspace.dependencies]
 # ---- Internal: foundation (tier 2) ------------------------------------------
 api-kit = { path = "crates/foundation/api-kit" }
+# rusticate:module(postgres):start
 datastore = { path = "crates/foundation/datastore" }
 idempotency = { path = "crates/foundation/idempotency" }
+# rusticate:module(postgres):end
+# rusticate:module(messaging):start
 messaging = { path = "crates/foundation/messaging" }
+# rusticate:module(messaging):end
 op-context = { path = "crates/foundation/op-context" }
 server-kit = { path = "crates/foundation/server-kit" }
 telemetry = { path = "crates/foundation/telemetry" }
+# rusticate:module(postgres):start
 test-kit = { path = "crates/foundation/test-kit" }
+# rusticate:module(postgres):end
 
 # ---- Internal: domains (tier 3) ---------------------------------------------
+# rusticate:module(example):start
 billing = { path = "crates/domains/billing" }
 billing-engine = { path = "crates/domains/billing-engine" }
+# rusticate:module(example):end
 iam = { path = "crates/domains/iam" }
 # xtask:domains (`cargo rusticate new domain` registers contexts here)
 
@@ -54,6 +62,7 @@ tower-http = { version = "0.7.1", features = [
     "trace",
 ] }
 
+# rusticate:module(postgres):start
 # ---- Persistence ------------------------------------------------------------
 sqlx = { version = "0.9.0", default-features = false, features = [
     "runtime-tokio",
@@ -67,8 +76,11 @@ sqlx = { version = "0.9.0", default-features = false, features = [
     "sqlx-toml",
 ] }
 
+# rusticate:module(postgres):end
+# rusticate:module(messaging):start
 # ---- Messaging --------------------------------------------------------------
 async-nats = "0.50"
+# rusticate:module(messaging):end
 
 # ---- Serialization & primitives --------------------------------------------
 base64 = "0.23"
@@ -106,8 +118,10 @@ figment = { version = "0.10.19", features = ["env", "toml"] }
 mimalloc = "0.1.52"
 
 # ---- Testing ----------------------------------------------------------------
+# rusticate:module(example):start
 proptest = "1.12"
 rust_decimal = "1.43" # test oracle only — production money math is integer-based
+# rusticate:module(example):end
 
 # ---- Tooling (xtask only) ---------------------------------------------------
 proc-macro2 = { version = "1.0.107", features = ["span-locations"] }
@@ -173,9 +187,11 @@ debug = "line-tables-only"
 [profile.dev.package."*"]
 debug = false
 
+# rusticate:module(postgres):start
 # sqlx recommends optimizing its macros: it makes `query!` type-checking much faster.
 [profile.dev.package.sqlx-macros]
 opt-level = 3
+# rusticate:module(postgres):end
 
 [profile.release]
 lto = "thin"

@@ -10,16 +10,19 @@
 //!   rendering without threading them through every function.
 //! * [`pagination`]: opaque-cursor keyset pagination.
 //! * [`Precondition`]: `ETag` / `If-Match` optimistic concurrency.
+//! * [`ReadinessCheck`]: what a dependency implements to gate readiness.
 
 mod error;
 mod extract;
 pub mod pagination;
 mod precondition;
 mod problem;
+mod readiness;
 mod scope;
 
 pub use error::{ApiError, ApiResult};
 pub use extract::{Json, Path, Query};
 pub use precondition::{Precondition, etag, precondition_failed, precondition_required};
 pub use problem::{FieldViolation, PROBLEM_JSON, ProblemDetails};
+pub use readiness::{CheckFuture, ReadinessCheck};
 pub use scope::RequestScope;

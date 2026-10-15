@@ -129,3 +129,23 @@ impl SystemStore {
         self.pool.close().await;
     }
 }
+
+impl api_kit::ReadinessCheck for DataStore {
+    fn name(&self) -> &'static str {
+        "database"
+    }
+
+    fn check(&self) -> api_kit::CheckFuture<'_> {
+        Box::pin(async move { self.ping().await.map_err(|err| err.to_string()) })
+    }
+}
+
+impl api_kit::ReadinessCheck for SystemStore {
+    fn name(&self) -> &'static str {
+        "database_system"
+    }
+
+    fn check(&self) -> api_kit::CheckFuture<'_> {
+        Box::pin(async move { self.ping().await.map_err(|err| err.to_string()) })
+    }
+}

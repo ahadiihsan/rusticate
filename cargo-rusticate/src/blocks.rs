@@ -38,10 +38,11 @@ enum Edge {
     End,
 }
 
-/// Keeps the lines whose blocks `keep` accepts. Unchanged text is borrowed.
+/// Keeps the lines whose blocks `keep` accepts; `keep` may reject a block
+/// outright (an unknown module). Unchanged text is borrowed.
 pub(crate) fn strip<'a>(
     text: &'a str,
-    keep: &dyn Fn(&Block) -> bool,
+    keep: &dyn Fn(&Block) -> Result<bool, String>,
 ) -> Result<Cow<'a, str>, Problem> {
     if !text.contains(PREFIX) {
         return Ok(Cow::Borrowed(text));
@@ -55,7 +56,8 @@ pub(crate) fn strip<'a>(
         match parse(line).map_err(problem)? {
             Some((block, Edge::Start)) => {
                 found_marker = true;
-                let kept = open.last().is_none_or(|(_, _, kept)| *kept) && keep(&block);
+                let wanted = keep(&block).map_err(problem)?;
+                let kept = open.last().is_none_or(|(_, _, kept)| *kept) && wanted;
                 open.push((block, number, kept));
             }
             Some((block, Edge::End)) => {
@@ -146,8 +148,11 @@ fn describe(block: &Block) -> String {
 mod tests {
     use super::*;
 
-    fn keep_postgres(block: &Block) -> bool {
-        *block == Block::Module("postgres".to_owned())
+    fn keep_postgres(block: &Block) -> Result<bool, String> {
+        match block {
+            Block::Module(name) if name == "typo" => Err("unknown module `typo`".to_owned()),
+            block => Ok(*block == Block::Module("postgres".to_owned())),
+        }
     }
 
     fn render(text: &str) -> String {

@@ -23,7 +23,9 @@ pub struct Package {
     pub name: String,
     pub manifest_path: PathBuf,
     pub dependencies: Vec<Dependency>,
+    // rusticate:template-only:start
     pub rust_version: Option<String>,
+    // rusticate:template-only:end
 }
 
 #[derive(Debug, Deserialize)]

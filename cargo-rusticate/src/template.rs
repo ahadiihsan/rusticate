@@ -12,8 +12,13 @@ use crate::{git, tree};
 pub(crate) const DEFAULT_TEMPLATE: &str = "https://github.com/ahadiihsan/rusticate.git";
 
 /// Paths that exist only to build and release the template itself: the
-/// generator, and the workflow that publishes it. Never copied.
-const TEMPLATE_ONLY_PATHS: [&str; 2] = ["cargo-rusticate", ".github/workflows/release.yml"];
+/// generator, the workflow that publishes it and the module manifest. Never
+/// copied.
+const TEMPLATE_ONLY_PATHS: [&str; 3] = [
+    "cargo-rusticate",
+    ".github/workflows/release.yml",
+    crate::modules::MANIFEST,
+];
 
 /// Files every rusticate template has. Their absence means a wrong `--template`.
 const REQUIRED: [&str; 2] = ["AGENTS.md", "architecture.toml"];
@@ -57,21 +62,45 @@ impl Source {
         }
     }
 
-    /// Copies the template's files into `dest`, which must exist. Returns how
-    /// many files were copied.
-    pub(crate) fn materialize(&self, dest: &Path) -> Result<usize> {
+    /// Gets the template's files, ready to be copied. A git template is
+    /// fetched into a scratch directory that lives as long as the result.
+    pub(crate) fn fetch(&self) -> Result<Fetched> {
         match self {
-            Self::Local(dir) => copy_files(dir, &listed_files(dir)?, dest),
+            Self::Local(dir) => Ok(Fetched {
+                root: dir.clone(),
+                files: listed_files(dir)?,
+                _staging: None,
+            }),
             Self::Git { url, git_ref } => {
                 let staging = Staging::create()?;
                 fetch(url, git_ref.as_deref(), staging.path())?;
-                let files: Vec<PathBuf> = tree::entries(staging.path())?
+                let files = tree::entries(staging.path())?
                     .into_iter()
                     .map(|entry| entry.path)
                     .collect();
-                copy_files(staging.path(), &files, dest)
+                Ok(Fetched {
+                    root: staging.path().to_path_buf(),
+                    files,
+                    _staging: Some(staging),
+                })
             }
         }
+    }
+}
+
+/// A template's files, before they are copied into a project.
+#[derive(Debug)]
+pub(crate) struct Fetched {
+    pub(crate) root: PathBuf,
+    files: Vec<PathBuf>,
+    _staging: Option<Staging>,
+}
+
+impl Fetched {
+    /// Copies every file into `dest` (which must exist) except template-only
+    /// paths and the paths in `excluded`. Returns how many were copied.
+    pub(crate) fn copy_into(&self, dest: &Path, excluded: &[&str]) -> Result<usize> {
+        copy_files(&self.root, &self.files, dest, excluded)
     }
 }
 
@@ -117,7 +146,7 @@ fn listed_files(dir: &Path) -> Result<Vec<PathBuf>> {
         .collect())
 }
 
-fn copy_files(from: &Path, files: &[PathBuf], dest: &Path) -> Result<usize> {
+fn copy_files(from: &Path, files: &[PathBuf], dest: &Path, excluded: &[&str]) -> Result<usize> {
     for required in REQUIRED {
         ensure!(
             files.iter().any(|file| file == Path::new(required)),
@@ -127,7 +156,7 @@ fn copy_files(from: &Path, files: &[PathBuf], dest: &Path) -> Result<usize> {
     }
     let mut copied = 0;
     for file in files {
-        if is_template_only(file) {
+        if is_template_only(file) || excluded.iter().any(|path| file.starts_with(path)) {
             continue;
         }
         ensure!(

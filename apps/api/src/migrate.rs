@@ -17,7 +17,9 @@ use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 pub const MIGRATORS: &[(&str, &Migrator)] = &[
     ("platform", &datastore::MIGRATOR),
     // xtask:migrators
+    // rusticate:module(example):start
     ("billing", &billing::MIGRATOR),
+    // rusticate:module(example):end
 ];
 
 pub async fn run(url: &SecretString) -> anyhow::Result<()> {

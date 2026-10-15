@@ -1,0 +1,73 @@
+# Optional modules of this template (ADR 0002), read by cargo-rusticate and
+# never copied into generated projects.
+#
+# Declared in dependency order. A module owns:
+# - `paths`: removed when the module is left out;
+# - `absent_paths`: stand-ins for projects without the module, removed when
+#   the module is included;
+# - marked blocks in shared files, between lines holding the comments
+#   `rusticate:module(<name>):start` and `rusticate:module(<name>):end`.
+#
+# Everything else is core: the HTTP API, auth, telemetry, tooling and the
+# agent harness. `cargo rusticate ci` generates and verifies a project for
+# every combination it supports.
+
+# Paths that exist only in this repository (besides cargo-rusticate/, the
+# release workflow and this file): never copied into projects.
+template_only = ["xtask/src/generator.rs"]
+
+[[module]]
+name = "postgres"
+summary = "PostgreSQL with row-level security (multi-tenant), migrations, idempotency"
+paths = [
+    "crates/foundation/datastore",
+    "crates/foundation/idempotency",
+    "crates/foundation/test-kit",
+    "apps/api/src/migrate.rs",
+    "apps/api/tests/api/migrate.rs",
+    "apps/api/tests/api/schema_guard.rs",
+    "xtask/src/db.rs",
+    "xtask/templates/migration.sql.tmpl",
+    "xtask/templates/domain/Cargo.toml.tmpl",
+    "xtask/templates/domain/lib.rs.tmpl",
+    "xtask/templates/domain/error.rs.tmpl",
+    "xtask/templates/domain/init.sql.tmpl",
+    "xtask/templates/domain/sqlx.toml.tmpl",
+    "xtask/templates/domain/tests_main.rs.tmpl",
+    "xtask/templates/domain/tests_support.rs.tmpl",
+    "xtask/templates/domain/tests_schema.rs.tmpl",
+    "xtask/templates/feature",
+    "docker",
+    "docker-compose.yml",
+    "deploy/k8s/migrate-job.yaml",
+    ".squawk.toml",
+    ".agents/skills/add-migration",
+]
+absent_paths = ["xtask/templates/core"]
+
+[[module]]
+name = "messaging"
+summary = "NATS JetStream messaging: worker, transactional outbox, event consumers"
+requires = ["postgres"]
+paths = [
+    "crates/foundation/messaging",
+    "apps/worker",
+    "xtask/templates/domain/events.rs.tmpl",
+    "xtask/templates/feature/event.rs.tmpl",
+    "xtask/templates/feature/event_handler.rs.tmpl",
+    "xtask/templates/feature/event_test.rs.tmpl",
+    "deploy/k8s/worker.yaml",
+    ".agents/skills/add-event-consumer",
+]
+
+[[module]]
+name = "example"
+summary = "the billing example, a complete reference context (remove it when you no longer need it)"
+requires = ["postgres", "messaging"]
+paths = [
+    "crates/domains/billing",
+    "crates/domains/billing-engine",
+    "apps/api/tests/api/http_flows.rs",
+    "apps/worker/tests/worker/pipeline.rs",
+    "apps/worker/tests/worker/wiring.rs",
+]

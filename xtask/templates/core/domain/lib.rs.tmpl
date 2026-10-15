@@ -1,0 +1,26 @@
+//! {{Domain}} bounded context.
+//!
+//! SCAFFOLD: one paragraph in the ubiquitous language: what this context
+//! owns, and what it deliberately does not.
+//!
+//! Feature slices (SOP §4): `<feature>.rs` holds the workflow,
+//! `<feature>/http.rs` the HTTP adapter. Add them with
+//! `cargo rusticate new feature {{domain}} <verb_noun>`.
+
+mod error;
+pub mod permissions;
+
+// xtask:features
+
+use utoipa_axum::router::OpenApiRouter;
+
+pub use error::{{Domain}}Error;
+
+/// HTTP routes of this context, mountable by any product binary.
+pub fn router<S>() -> OpenApiRouter<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
+    OpenApiRouter::new()
+        // xtask:routes
+}

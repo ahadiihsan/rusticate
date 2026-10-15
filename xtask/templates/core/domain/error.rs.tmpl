@@ -1,0 +1,22 @@
+use api_kit::ApiError;
+use op_context::AuthzError;
+use {{domain_ident}}_engine::EngineError;
+
+/// Everything a {{domain}} workflow can fail with (ERR-001). Workflows return
+/// this, never `ApiError`; the HTTP mapping lives in one place, below.
+#[derive(Debug, thiserror::Error)]
+pub enum {{Domain}}Error {
+    #[error(transparent)]
+    Forbidden(#[from] AuthzError),
+    #[error(transparent)]
+    Rule(#[from] EngineError),
+}
+
+impl From<{{Domain}}Error> for ApiError {
+    fn from(err: {{Domain}}Error) -> Self {
+        match err {
+            {{Domain}}Error::Forbidden(authz) => authz.into(),
+            {{Domain}}Error::Rule(rule) => Self::unprocessable("{{DOMAIN}}_RULE_VIOLATED", rule.to_string()),
+        }
+    }
+}

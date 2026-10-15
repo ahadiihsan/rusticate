@@ -1,0 +1,40 @@
+//! `POST /v1/{{domain_kebab}}/{{feature_kebab}}`.
+//!
+//! SCAFFOLD: describe the use case in the ubiquitous language: who does
+//! what, which invariants it protects.
+
+pub(crate) mod http;
+
+use op_context::OpCtx;
+use serde::{Deserialize, Serialize};
+
+use crate::{permissions, {{Domain}}Error};
+
+/// The validated command (value objects, never raw input).
+#[derive(Debug, Clone, Serialize)]
+pub struct {{Feature}}Cmd {
+    /// SCAFFOLD: replace with the command's value objects.
+    pub reference: String,
+}
+
+/// The workflow's result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct {{Feature}}Result {
+    /// SCAFFOLD: replace with what the caller needs back.
+    pub reference: String,
+}
+
+/// HOP 2: authorize → decide (with {{domain_ident}}_engine) → return.
+#[tracing::instrument(
+    name = "{{domain}}.{{feature}}",
+    skip_all,
+    fields(tenant_id = %ctx.tenant_id(), actor_id = %ctx.actor_id())
+)]
+pub async fn {{feature}}(ctx: &OpCtx, cmd: {{Feature}}Cmd) -> Result<{{Feature}}Result, {{Domain}}Error> {
+    ctx.require(permissions::{{PERMISSION}})?;
+
+    // SCAFFOLD: decide with {{domain_ident}}_engine and produce the result.
+    Ok({{Feature}}Result {
+        reference: cmd.reference,
+    })
+}

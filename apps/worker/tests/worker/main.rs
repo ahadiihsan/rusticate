@@ -3,5 +3,7 @@
 #![cfg(test)]
 
 mod health;
+// rusticate:module(example):start
 mod pipeline;
 mod wiring;
+// rusticate:module(example):end

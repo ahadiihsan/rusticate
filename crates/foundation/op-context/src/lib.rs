@@ -16,6 +16,8 @@ mod ids;
 #[cfg(feature = "mint")]
 pub mod mint;
 mod permission;
+#[cfg(feature = "mint")]
+pub mod testing;
 
 pub use context::{ActorKind, AuthzError, OpCtx};
 pub use ids::{ActorId, CorrelationId, TenantId};

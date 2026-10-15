@@ -1,0 +1,21 @@
+use op_context::testing as ctx;
+use {{domain_ident}}::permissions::{{PERMISSION}};
+use {{domain_ident}}::{{feature}}::{{feature}};
+use {{domain_ident}}::{{Domain}}Error;
+
+#[tokio::test]
+async fn {{feature}}_requires_its_permission() {
+    let outcome = {{feature}}(&ctx::user(ctx::tenant(), &[])).await;
+
+    assert!(matches!(outcome, Err({{Domain}}Error::Forbidden(_))));
+}
+
+#[tokio::test]
+async fn {{feature}}_reads_the_callers_tenant() {
+    let tenant = ctx::tenant();
+
+    let view = {{feature}}(&ctx::user(tenant, &[{{PERMISSION}}])).await.unwrap();
+
+    assert_eq!(view.tenant_id, tenant.as_uuid());
+    // SCAFFOLD: assert the view and every failure mode.
+}

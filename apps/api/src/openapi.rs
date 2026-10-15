@@ -14,7 +14,9 @@ use utoipa::{Modify, OpenApi};
     ),
     modifiers(&BearerAuth),
     components(schemas(ProblemDetails, FieldViolation)),
+    // rusticate:module(example):start
     tags((name = "billing", description = "Tenant billing settings and invoices.")),
+    // rusticate:module(example):end
 )]
 pub struct ApiDoc;
 

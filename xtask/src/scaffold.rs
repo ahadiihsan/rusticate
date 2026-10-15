@@ -143,72 +143,96 @@ fn timestamp() -> String {
     chrono::Utc::now().format("%Y%m%d%H%M%S").to_string()
 }
 
+/// The template modules this project has (ADR 0002), from the crates present.
+#[derive(Debug, Clone, Copy)]
+struct Stack {
+    postgres: bool,
+    messaging: bool,
+}
+
+impl Stack {
+    fn detect(workspace: &Workspace) -> Self {
+        Self {
+            postgres: workspace.member("datastore").is_some(),
+            messaging: workspace.member("messaging").is_some(),
+        }
+    }
+
+    /// Scaffold templates without a database live under `core/`.
+    const fn templates(self) -> &'static str {
+        if self.postgres { "" } else { "core/" }
+    }
+}
+
+/// A scaffold template (under `xtask/templates`), read at run time so a
+/// project carries only the templates of its modules. Module marker lines,
+/// present only in the template repository (where every module is), are
+/// dropped.
+fn template(relative: &str) -> Result<String> {
+    let path = root().join("xtask/templates").join(relative);
+    let text = std::fs::read_to_string(&path)
+        .with_context(|| format!("reading the scaffold template {}", path.display()))?;
+    let marker = Regex::new(r"^\s*(//|#|--)\s*[a-z-]+:module\([a-z-]+\):(start|end)\s*$")?;
+    let mut kept = String::with_capacity(text.len());
+    for line in text.lines().filter(|line| !marker.is_match(line)) {
+        kept.push_str(line);
+        kept.push('\n');
+    }
+    Ok(kept)
+}
+
 /// Files of a new context: (`crate` or `engine`, path, template).
-const DOMAIN_FILES: &[(&str, &str, &str)] = &[
-    (
-        "crate",
-        "Cargo.toml",
-        include_str!("../templates/domain/Cargo.toml.tmpl"),
-    ),
-    (
-        "crate",
-        "sqlx.toml",
-        include_str!("../templates/domain/sqlx.toml.tmpl"),
-    ),
-    (
-        "crate",
-        "src/lib.rs",
-        include_str!("../templates/domain/lib.rs.tmpl"),
-    ),
-    (
-        "crate",
-        "src/error.rs",
-        include_str!("../templates/domain/error.rs.tmpl"),
-    ),
-    (
-        "crate",
-        "src/permissions.rs",
-        include_str!("../templates/domain/permissions.rs.tmpl"),
-    ),
-    (
-        "crate",
-        "src/events.rs",
-        include_str!("../templates/domain/events.rs.tmpl"),
-    ),
-    (
-        "crate",
-        "tests/integration/main.rs",
-        include_str!("../templates/domain/tests_main.rs.tmpl"),
-    ),
-    (
-        "crate",
-        "tests/integration/support.rs",
-        include_str!("../templates/domain/tests_support.rs.tmpl"),
-    ),
-    (
-        "crate",
-        "tests/integration/schema.rs",
-        include_str!("../templates/domain/tests_schema.rs.tmpl"),
-    ),
-    (
-        "engine",
-        "Cargo.toml",
-        include_str!("../templates/engine/Cargo.toml.tmpl"),
-    ),
-    (
-        "engine",
-        "src/lib.rs",
-        include_str!("../templates/engine/lib.rs.tmpl"),
-    ),
-    (
-        "engine",
-        "src/error.rs",
-        include_str!("../templates/engine/error.rs.tmpl"),
-    ),
-];
+fn domain_files(stack: Stack) -> Vec<(&'static str, &'static str, String)> {
+    let dir = stack.templates();
+    let mut files = vec![
+        (
+            "crate",
+            "Cargo.toml",
+            format!("{dir}domain/Cargo.toml.tmpl"),
+        ),
+        ("crate", "src/lib.rs", format!("{dir}domain/lib.rs.tmpl")),
+        (
+            "crate",
+            "src/error.rs",
+            format!("{dir}domain/error.rs.tmpl"),
+        ),
+        (
+            "crate",
+            "src/permissions.rs",
+            "domain/permissions.rs.tmpl".to_owned(),
+        ),
+        (
+            "crate",
+            "tests/integration/main.rs",
+            format!("{dir}domain/tests_main.rs.tmpl"),
+        ),
+        ("engine", "Cargo.toml", "engine/Cargo.toml.tmpl".to_owned()),
+        ("engine", "src/lib.rs", "engine/lib.rs.tmpl".to_owned()),
+        ("engine", "src/error.rs", "engine/error.rs.tmpl".to_owned()),
+    ];
+    if stack.postgres {
+        files.extend([
+            ("crate", "sqlx.toml", "domain/sqlx.toml.tmpl".to_owned()),
+            (
+                "crate",
+                "tests/integration/support.rs",
+                "domain/tests_support.rs.tmpl".to_owned(),
+            ),
+            (
+                "crate",
+                "tests/integration/schema.rs",
+                "domain/tests_schema.rs.tmpl".to_owned(),
+            ),
+        ]);
+    }
+    if stack.messaging {
+        files.push(("crate", "src/events.rs", "domain/events.rs.tmpl".to_owned()));
+    }
+    files
+}
 
 /// Registers a new context with the workspace and mounts it in the API.
-fn wire_domain(name: &str, ident: &str) -> Result<()> {
+fn wire_domain(name: &str, ident: &str, stack: Stack) -> Result<()> {
     let root = root();
     let edits = [
         (
@@ -231,14 +255,16 @@ fn wire_domain(name: &str, ident: &str) -> Result<()> {
             "// xtask:contexts",
             format!(".merge({ident}::router())"),
         ),
-        (
-            "apps/api/src/migrate.rs",
-            "// xtask:migrators",
-            format!("(\"{name}\", &{ident}::MIGRATOR),"),
-        ),
     ];
     for (file, marker, line) in edits {
         insert_after_marker(&root.join(file), marker, &line)?;
+    }
+    if stack.postgres {
+        insert_after_marker(
+            &root.join("apps/api/src/migrate.rs"),
+            "// xtask:migrators",
+            &format!("(\"{name}\", &{ident}::MIGRATOR),"),
+        )?;
     }
     Ok(())
 }
@@ -261,28 +287,35 @@ pub fn domain(name: &str) -> Result<()> {
         "context `{name}` already exists"
     );
     let names = Names::domain(name);
+    let stack = Stack::detect(&Workspace::load()?);
 
     println!("Scaffolding bounded context `{name}`:");
-    for (dir, file, template) in DOMAIN_FILES {
-        let base = if *dir == "engine" {
+    for (dir, file, relative) in domain_files(stack) {
+        let base = if dir == "engine" {
             &engine_dir
         } else {
             &crate_dir
         };
-        write_new(&base.join(file), &names.render(template))?;
+        write_new(&base.join(file), &names.render(&template(&relative)?))?;
     }
-    write_new(
-        &crate_dir.join(format!("migrations/{}_{name}_init.sql", timestamp())),
-        &names.render(include_str!("../templates/domain/init.sql.tmpl")),
-    )?;
+    if stack.postgres {
+        write_new(
+            &crate_dir.join(format!("migrations/{}_{name}_init.sql", timestamp())),
+            &names.render(&template("domain/init.sql.tmpl")?),
+        )?;
+    }
     write_new(&engine_dir.join("clippy.toml"), &engine_clippy_config()?)?;
-    wire_domain(name, names.get("domain_ident"))?;
+    wire_domain(name, names.get("domain_ident"), stack)?;
     sh::run(sh::cargo(["fmt", "--all"]))?;
 
+    let migrate = if stack.postgres {
+        format!("  cargo rusticate db migrate                      # creates the `{name}` schema\n")
+    } else {
+        String::new()
+    };
     println!(
-        "\nNext:\n  1. cargo rusticate db migrate                      # creates the `{name}` schema\n  \
-         2. cargo rusticate new feature {name} <verb_noun>    # add use cases\n  \
-         3. replace every SCAFFOLD marker, then: cargo rusticate verify"
+        "\nNext:\n{migrate}  cargo rusticate new feature {name} <verb_noun>    # add use cases\n  \
+         then replace every SCAFFOLD marker, and: cargo rusticate verify"
     );
     Ok(())
 }
@@ -370,39 +403,73 @@ pub fn feature(domain: &str, feature: &str, kind: FeatureKind) -> Result<()> {
         !src.join(format!("{feature}.rs")).exists(),
         "feature `{feature}` already exists"
     );
+    let stack = Stack::detect(&workspace);
+    ensure!(
+        kind != FeatureKind::Event || stack.messaging,
+        "event consumers need the messaging module, which this project does not have"
+    );
     let names = Names::feature(domain, feature);
-    let render = |template: &str| names.render(template);
+    let render = |relative: &str| -> Result<String> {
+        Ok(names.render(&template(&format!(
+            "{}feature/{relative}",
+            stack.templates()
+        ))?))
+    };
     let tests = member.abs_dir.join("tests/integration");
 
     println!("Scaffolding {kind:?} feature `{domain}::{feature}`:");
     let (workflow, adapter, adapter_file, test) = match kind {
         FeatureKind::Command => (
-            include_str!("../templates/feature/command.rs.tmpl"),
-            include_str!("../templates/feature/command_http.rs.tmpl"),
+            "command.rs.tmpl",
+            "command_http.rs.tmpl",
             "http.rs",
-            include_str!("../templates/feature/command_test.rs.tmpl"),
+            "command_test.rs.tmpl",
         ),
         FeatureKind::Query => (
-            include_str!("../templates/feature/query.rs.tmpl"),
-            include_str!("../templates/feature/query_http.rs.tmpl"),
+            "query.rs.tmpl",
+            "query_http.rs.tmpl",
             "http.rs",
-            include_str!("../templates/feature/query_test.rs.tmpl"),
+            "query_test.rs.tmpl",
         ),
         FeatureKind::Event => (
-            include_str!("../templates/feature/event.rs.tmpl"),
-            include_str!("../templates/feature/event_handler.rs.tmpl"),
+            "event.rs.tmpl",
+            "event_handler.rs.tmpl",
             "handler.rs",
-            include_str!("../templates/feature/event_test.rs.tmpl"),
+            "event_test.rs.tmpl",
         ),
     };
-    write_new(&src.join(format!("{feature}.rs")), &render(workflow))?;
-    write_new(&src.join(feature).join(adapter_file), &render(adapter))?;
-    write_new(
-        &src.join(feature).join("db.rs"),
-        &render(include_str!("../templates/feature/db.rs.tmpl")),
-    )?;
-    write_new(&tests.join(format!("{feature}.rs")), &render(test))?;
+    write_new(&src.join(format!("{feature}.rs")), &render(workflow)?)?;
+    write_new(&src.join(feature).join(adapter_file), &render(adapter)?)?;
+    if stack.postgres {
+        write_new(&src.join(feature).join("db.rs"), &render("db.rs.tmpl")?)?;
+    }
+    write_new(&tests.join(format!("{feature}.rs")), &render(test)?)?;
 
+    wire_feature(&names, domain, feature, kind, &src, &tests)?;
+    sh::run(sh::cargo(["fmt", "--all"]))?;
+
+    let prepare = if stack.postgres {
+        "  cargo rusticate db prepare        # caches the new query metadata (needs `db up`)\n"
+    } else {
+        ""
+    };
+    println!(
+        "\nNext:\n{prepare}  replace every SCAFFOLD marker (cargo rusticate arch lists them)\n  \
+         then: cargo rusticate verify"
+    );
+    Ok(())
+}
+
+/// Registers a new feature: its permission, module, test module, and its
+/// route (HTTP) or consumer (event).
+fn wire_feature(
+    names: &Names,
+    domain: &str,
+    feature: &str,
+    kind: FeatureKind,
+    src: &Path,
+    tests: &Path,
+) -> Result<()> {
     insert_after_marker(
         &src.join("permissions.rs"),
         "// xtask:permissions",
@@ -446,13 +513,6 @@ pub fn feature(domain: &str, feature: &str, kind: FeatureKind) -> Result<()> {
             )?;
         }
     }
-    sh::run(sh::cargo(["fmt", "--all"]))?;
-
-    println!(
-        "\nNext:\n  1. cargo rusticate db prepare        # caches the new query metadata (needs `db up`)\n  \
-         2. replace every SCAFFOLD marker (cargo rusticate arch lists them)\n  \
-         3. cargo rusticate verify"
-    );
     Ok(())
 }
 
@@ -483,10 +543,7 @@ pub fn migration(domain: &str, description: &str) -> Result<PathBuf> {
     let names = Names {
         pairs: vec![("schema", schema), ("description", description.to_owned())],
     };
-    write_new(
-        &path,
-        &names.render(include_str!("../templates/migration.sql.tmpl")),
-    )?;
+    write_new(&path, &names.render(&template("migration.sql.tmpl")?))?;
     println!(
         "\nNext: edit it, `cargo rusticate db migrate`, then `cargo rusticate db prepare` once queries use it."
     );

@@ -12,7 +12,7 @@
 
 use std::fmt;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result, ensure};
 
@@ -84,10 +84,8 @@ impl Identity {
 
     /// The file's content for the new project.
     pub(crate) fn render(&self, text: &str) -> Result<String, Problem> {
-        // Until modules can be chosen, every module is kept (the full stack).
-        let text = blocks::strip(text, &|block| *block != Block::TemplateOnly)?;
-        check_covered(&text)?;
-        Ok(self.rewrite(&text))
+        check_covered(text)?;
+        Ok(self.rewrite(text))
     }
 
     /// One left-to-right pass: each match is replaced (or kept, if protected)
@@ -115,9 +113,14 @@ impl Identity {
         out
     }
 
-    /// Renders every text file under `root` in place and returns how many
-    /// changed. Nothing is written unless every file renders.
-    pub(crate) fn apply_to_tree(&self, root: &Path) -> Result<usize> {
+    /// Removes the blocks `keep` rejects, then renders every text file under
+    /// `root` in place, and returns the files that changed. Nothing is
+    /// written unless every file succeeds.
+    pub(crate) fn apply_to_tree(
+        &self,
+        root: &Path,
+        keep: &dyn Fn(&Block) -> Result<bool, String>,
+    ) -> Result<Vec<PathBuf>> {
         let mut problems = Vec::new();
         let mut changes = Vec::new();
         for entry in tree::entries(root)? {
@@ -133,7 +136,8 @@ impl Identity {
             let Ok(text) = String::from_utf8(bytes) else {
                 continue; // binary: nothing to rename
             };
-            match self.render(&text) {
+            let rendered = blocks::strip(&text, keep).and_then(|kept| self.render(&kept));
+            match rendered {
                 Ok(rendered) if rendered != text => changes.push((path, rendered)),
                 Ok(_) => {}
                 Err(problem) => problems.push(format!("{shown}: {problem}")),
@@ -141,14 +145,14 @@ impl Identity {
         }
         ensure!(
             problems.is_empty(),
-            "the template has identity the generator does not cover (fix the template, \
-             see cargo-rusticate/src/identity.rs):\n  {}",
+            "the template has content the generator cannot process (fix the template; \
+             see cargo-rusticate/src/identity.rs and blocks.rs):\n  {}",
             problems.join("\n  ")
         );
         for (path, text) in &changes {
             fs::write(path, text).with_context(|| format!("writing {}", path.display()))?;
         }
-        Ok(changes.len())
+        Ok(changes.into_iter().map(|(path, _)| path).collect())
     }
 }
 

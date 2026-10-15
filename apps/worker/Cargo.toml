@@ -13,11 +13,12 @@ path = "src/main.rs"
 [dependencies]
 anyhow.workspace = true
 async-nats.workspace = true
+# rusticate:module(example):start
 billing.workspace = true
+# rusticate:module(example):end
 # xtask:contexts (`cargo rusticate new feature --kind event` adds consuming contexts here)
 datastore.workspace = true
 figment.workspace = true
-futures.workspace = true
 messaging.workspace = true
 mimalloc.workspace = true
 serde.workspace = true
@@ -28,7 +29,9 @@ tokio-util.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+# rusticate:module(example):start
 billing-engine.workspace = true
+# rusticate:module(example):end
 idempotency.workspace = true
 op-context.workspace = true
 sqlx.workspace = true
