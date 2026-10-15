@@ -136,7 +136,7 @@ mod tests {
     use crate::dev;
 
     const SECRET: &str = "0123456789abcdef0123456789abcdef";
-    const READ: Permission = Permission::new("billing.invoice.read");
+    const READ: Permission = Permission::new("orders.order.read");
 
     fn config(secret: &str) -> AuthConfig {
         AuthConfig {
@@ -156,7 +156,7 @@ mod tests {
             audience,
             tenant: TenantId::from_uuid(Uuid::from_u128(1)),
             actor: ActorId::from_uuid(Uuid::from_u128(2)),
-            permissions: &["billing.invoice.read"],
+            permissions: &["orders.order.read"],
             ttl_secs,
         })
         .unwrap()
@@ -236,12 +236,12 @@ mod tests {
 
         assert!(
             verifier
-                .verify(&token_for(&["billing-ui", "api"]), CorrelationId::new_v7())
+                .verify(&token_for(&["admin-ui", "api"]), CorrelationId::new_v7())
                 .is_ok()
         );
         assert!(
             verifier
-                .verify(&token_for(&["billing-ui"]), CorrelationId::new_v7())
+                .verify(&token_for(&["admin-ui"]), CorrelationId::new_v7())
                 .is_err()
         );
     }
