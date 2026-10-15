@@ -47,7 +47,7 @@ cargo rusticate init --owner acme
 | `--owner <login>` | GitHub user or organisation that owns the repository. Written to `CODEOWNERS` and the `SECURITY.md` report link. Without it they say `OWNER`. |
 | `--path <dir>` | (`new`) Directory to create. Default: `./<name>`. |
 | `--name <name>` | (`init`) Project name. Default: the directory's name. |
-| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.3.0` for 0.3.0). `--ref main` gives the latest unreleased template. |
+| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.3.1` for 0.3.1). `--ref main` gives the latest unreleased template. |
 | `--template <url-or-dir>` | Another source: a fork's git URL, or a local checkout of the template. |
 | `--no-git` | Do not initialise a git repository. |
 | `--minimal` | Core only; add modules with `--with`. |
@@ -75,13 +75,23 @@ cargo rusticate --help                  # lists every project command
 
 The commands are not built into this tool. They live in each project's `xtask/`, versioned with its code and CI, so a project keeps the rules it was generated with whatever version of `cargo-rusticate` is installed. `cargo xtask <command>` runs the same command without this tool (CI and the git hooks use it).
 
+## Upgrading a project
+
+```sh
+cargo rusticate upgrade            # to this generator's template release
+cargo rusticate upgrade --to main  # or any tag or branch
+```
+
+Merges the newer template's tooling and agent harness (xtask, scaffolds, skills, CI, docs, lint configs) into the project, keeping your changes: files you did not touch are replaced, files both sides changed are merged, and real conflicts are left as git conflict markers. Product code is never touched. It needs a clean working tree and the project's `rusticate.toml` (projects generated with 0.3.1 or later). See [ADR 0003](https://github.com/ahadiihsan/rusticate/blob/main/docs/adr/0003-upgrade-tooling-by-three-way-merge.md).
+
 ## What the generator does
 
 1. Fetches the template at the release matching its own version (`cargo-rusticate 0.1.0` → tag `v0.1.0`), so a given generator always produces the same project.
 2. Keeps the modules you chose: the template declares them in `template.toml`, with the paths each owns and the blocks it marks in shared files. A Rust file that lost lines is formatted with `rustfmt`, and a document link into a file that was left out points at that file in the template repository, at the version used.
 3. Renames the template's identity everywhere: `rusticate` → `my-service`, `Rusticate` → `My Service`, the repository URL and `@ahadiihsan` → your owner. Links into the template's history and the generator's own name are kept. Sections that only make sense in the template repository are removed.
 4. Refuses to finish if any other spelling of the template's identity remains, or a marker is malformed or names an unknown module, and leaves the directory as it found it.
-5. Starts a fresh git repository on `main` (no commit), unless the directory already had one or you passed `--no-git`.
+5. Writes `rusticate.toml`: the template source, its exact revision, the modules chosen, the name and owner. Keep it committed; upgrading to a newer template compares against it.
+6. Starts a fresh git repository on `main` (no commit), unless the directory already had one or you passed `--no-git`.
 
 The generated project keeps `LICENSE-MIT` and `LICENSE-APACHE`: they cover the code that came from the template. License your own code as you choose.
 

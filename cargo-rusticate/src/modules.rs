@@ -158,6 +158,10 @@ impl Request {
 pub(crate) struct Selection(BTreeSet<String>);
 
 impl Selection {
+    pub(crate) fn names(&self) -> Vec<&str> {
+        self.0.iter().map(String::as_str).collect()
+    }
+
     pub(crate) fn includes(&self, name: &str) -> bool {
         self.0.contains(name)
     }
