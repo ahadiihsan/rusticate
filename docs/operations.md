@@ -56,7 +56,7 @@ Do not loosen retry limits to make failures disappear.
 
 **Suspected cross-tenant exposure.**
 1. Confirm the service role posture: `SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user` must return `false, false` for `app_rw`.
-2. Run the schema guard (`cargo xtask test -p api -- schema_guard`) against a restore of production DDL.
+2. Run the schema guard (`cargo rusticate test -p api -- schema_guard`) against a restore of production DDL.
 3. RLS errors in logs indicate attempted, blocked access, not a leak. Investigate the caller.
 
 **Pool exhaustion (503 `DATABASE_UNAVAILABLE`).**

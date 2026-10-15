@@ -10,7 +10,7 @@ publish.workspace = true
 default = []
 # Axum extractor (`OpCtx` as a handler argument) and ApiError conversions.
 axum = ["dep:axum", "dep:api-kit"]
-# Capability to construct an OpCtx. Restricted by `cargo xtask arch` to the
+# Capability to construct an OpCtx. Restricted by `cargo rusticate arch` to the
 # crates listed under [capabilities.mint] in architecture.toml.
 mint = []
 

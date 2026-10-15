@@ -1,6 +1,6 @@
 # =============================================================================
 # Workspace manifest. Rules: docs/sop/rust-backend-sop-v2.md
-# Tier layout and dependency rules are machine-checked by `cargo xtask arch`
+# Tier layout and dependency rules are machine-checked by `cargo rusticate arch`
 # against architecture.toml. Do not add a member without adding it there.
 # =============================================================================
 [workspace]
@@ -33,7 +33,7 @@ test-kit = { path = "crates/foundation/test-kit" }
 billing = { path = "crates/domains/billing" }
 billing-engine = { path = "crates/domains/billing-engine" }
 iam = { path = "crates/domains/iam" }
-# xtask:domains (`cargo xtask new domain` registers contexts here)
+# xtask:domains (`cargo rusticate new domain` registers contexts here)
 
 # ---- Async runtime & HTTP ---------------------------------------------------
 axum = { version = "0.8.9", features = ["macros"] }
@@ -119,7 +119,7 @@ walkdir = "2.5"
 
 # =============================================================================
 # COMPILER GUARDRAILS — every member except xtask sets `[lints] workspace = true`
-# (verified by `cargo xtask arch`). Exceptions require
+# (verified by `cargo rusticate arch`). Exceptions require
 # `#[expect(lint, reason = "...")]`; bare `#[allow]` is itself denied.
 # =============================================================================
 [workspace.lints.rust]

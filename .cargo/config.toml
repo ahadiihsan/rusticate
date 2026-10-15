@@ -4,5 +4,5 @@ xtask = "run --quiet --package xtask --"
 [env]
 # DB-010: builds are hermetic. `query!` macros type-check against the committed
 # `.sqlx/` metadata, never a live database. After adding or changing a query run
-# `cargo xtask db prepare` (requires `cargo xtask db up`).
+# `cargo rusticate db prepare` (requires `cargo rusticate db up`).
 SQLX_OFFLINE = "true"

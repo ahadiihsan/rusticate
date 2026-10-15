@@ -9,7 +9,7 @@ publish.workspace = true
 [features]
 default = []
 # Token issuing for tests and local development. Never enabled by a deployable binary
-# (`cargo xtask arch` verifies apps do not enable it).
+# (`cargo rusticate arch` verifies apps do not enable it).
 dev-tokens = []
 
 [dependencies]

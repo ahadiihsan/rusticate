@@ -1,7 +1,9 @@
-//! `cargo xtask`: the single entry point for engineers, agents and CI.
+//! The project's commands: the single entry point for engineers, agents and CI.
 //!
 //! Every quality gate in the SOP is a subcommand here, so "done" means the
-//! same thing on a laptop, in an agent sandbox and in CI.
+//! same thing on a laptop, in an agent sandbox and in CI. People run them as
+//! `cargo rusticate <command>` (cargo-rusticate forwards to this binary); CI,
+//! git hooks and machines without cargo-rusticate run `cargo xtask <command>`.
 
 mod arch;
 mod db;
@@ -18,8 +20,12 @@ use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "cargo xtask",
-    about = "Project automation and architecture enforcement"
+    name = "cargo rusticate",
+    bin_name = "cargo rusticate",
+    about = "Project automation and architecture enforcement",
+    after_help = "`cargo rusticate <command>` and `cargo xtask <command>` are the same command \
+                  (install the first with `cargo install cargo-rusticate --locked`).\n\
+                  To start another project, run `cargo rusticate new <name>` outside this one."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -170,6 +176,7 @@ fn setup() -> Result<()> {
     sh::run(sh::cmd("git", ["config", "core.hooksPath", ".githooks"]))?;
     let mut missing = Vec::new();
     for (tool, install) in [
+        ("cargo-rusticate", "cargo install --locked cargo-rusticate"),
         ("cargo-nextest", "cargo install --locked cargo-nextest"),
         ("cargo-deny", "cargo install --locked cargo-deny"),
         ("cargo-llvm-cov", "cargo install --locked cargo-llvm-cov"),
@@ -278,7 +285,7 @@ fn verify(fast: bool) -> Result<()> {
     }
     if fast {
         println!(
-            "\n✓ verify --fast passed (database tests skipped: run `cargo xtask verify` before finishing)"
+            "\n✓ verify --fast passed (database tests skipped: run `cargo rusticate verify` before finishing)"
         );
         return Ok(());
     }
@@ -322,7 +329,7 @@ fn openapi(check: bool) -> Result<()> {
         let committed = std::fs::read_to_string(&path)?;
         anyhow::ensure!(
             committed == generated,
-            "apps/api/openapi.json is stale: run `cargo xtask openapi` and review the contract diff"
+            "apps/api/openapi.json is stale: run `cargo rusticate openapi` and review the contract diff"
         );
         println!("✓ OpenAPI contract is up to date");
     } else {

@@ -5,7 +5,7 @@ use worker::health::NatsReadiness;
 async fn nats_readiness_reflects_the_connection() {
     let client = async_nats::connect("nats://127.0.0.1:4222")
         .await
-        .expect("NATS must be running (cargo xtask db up)");
+        .expect("NATS must be running (cargo rusticate db up)");
     let check = NatsReadiness(client.clone());
 
     assert_eq!(check.name(), "nats");

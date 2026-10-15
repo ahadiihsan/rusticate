@@ -7,7 +7,7 @@ rust-version.workspace = true
 publish.workspace = true
 
 # ENG-001: an engine depends only on the allowlist in architecture.toml
-# ([tiers.engine].allowed_external). `cargo xtask arch` enforces it.
+# ([tiers.engine].allowed_external). `cargo rusticate arch` enforces it.
 [dependencies]
 serde.workspace = true
 thiserror.workspace = true

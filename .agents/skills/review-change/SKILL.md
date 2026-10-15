@@ -5,11 +5,11 @@ description: Review a change in this Rust workspace — your own before declarin
 
 # Review a change
 
-`cargo xtask verify` proves the mechanical rules. This review covers what it cannot. Read the diff top to bottom; for each item, either confirm it or fix it.
+`cargo rusticate verify` proves the mechanical rules. This review covers what it cannot. Read the diff top to bottom; for each item, either confirm it or fix it.
 
 ## 1. The checks actually ran
 
-- [ ] `cargo xtask verify` passed **after** the last edit (not `--fast` only).
+- [ ] `cargo rusticate verify` passed **after** the last edit (not `--fast` only).
 - [ ] No `SCAFFOLD:` markers, no `#[expect]` without a convincing reason, no deleted or weakened tests.
 - [ ] `.sqlx/` and `apps/api/openapi.json` diffs are present if queries or the API changed, and they match the intent.
 

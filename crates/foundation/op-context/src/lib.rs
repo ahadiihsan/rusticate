@@ -6,7 +6,7 @@
 //! transaction without one, so tenant scoping cannot be forgotten.
 //!
 //! `OpCtx` cannot be constructed outside this crate except through the `mint`
-//! module (feature `mint`), a capability that `cargo xtask arch` restricts to
+//! module (feature `mint`), a capability that `cargo rusticate arch` restricts to
 //! authentication edges (IAM middleware, worker envelopes, tests).
 
 mod context;

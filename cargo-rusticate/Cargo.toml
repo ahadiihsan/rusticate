@@ -5,7 +5,7 @@
 # Its version is the template version it creates projects from (tag v<version>).
 [package]
 name = "cargo-rusticate"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Start a production-ready multi-tenant Rust backend from the rusticate boilerplate: `cargo rusticate new my-service`."

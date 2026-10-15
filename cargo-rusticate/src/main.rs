@@ -1,4 +1,7 @@
-//! `cargo rusticate`: start a project from the rusticate boilerplate.
+//! `cargo rusticate`: one front door for the rusticate boilerplate.
+//!
+//! Outside a project it creates projects (`new <name>`, `init`). Inside one,
+//! every other command is the project's own `cargo xtask` (see `project`).
 //!
 //! Cargo runs `cargo rusticate <args>` as `cargo-rusticate rusticate <args>`;
 //! running the binary directly (`cargo-rusticate <args>`) works too.
@@ -7,6 +10,7 @@ mod generate;
 mod git;
 mod identity;
 mod name;
+mod project;
 mod template;
 mod tree;
 
@@ -19,13 +23,18 @@ use clap::{Args, Parser, Subcommand};
 
 use crate::generate::{Plan, Report};
 use crate::name::{Owner, ProjectName};
+use crate::project::Route;
 use crate::template::Source;
 
 #[derive(Debug, Parser)]
 #[command(name = "cargo", bin_name = "cargo")]
 enum Cargo {
     /// Start a production-ready multi-tenant Rust backend from the rusticate boilerplate.
-    #[command(version)]
+    #[command(
+        version,
+        after_help = "Inside a project, every other command (verify, db up, new domain, run api, ...) \
+                      is the project's own `cargo xtask`: run `cargo rusticate --help` there to list them."
+    )]
     Rusticate(Rusticate),
 }
 
@@ -74,14 +83,28 @@ struct Common {
 }
 
 fn main() -> ExitCode {
-    let Cargo::Rusticate(cli) = Cargo::parse_from(as_cargo_subcommand(std::env::args_os()));
-    match run(cli.command) {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(err) => {
-            eprintln!("error: {err:#}");
+    let args = as_cargo_subcommand(std::env::args_os());
+    let rest = args.get(2..).unwrap_or_default();
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let in_project = project::find_root(&cwd).is_some();
+    match project::route(rest, in_project) {
+        Route::Project => exit_with(project::forward(rest)),
+        Route::NotInProject(command) => {
+            eprintln!("error: {}", project::not_in_project_message(&command, &cwd));
             ExitCode::FAILURE
         }
+        Route::Generator => {
+            let Cargo::Rusticate(cli) = Cargo::parse_from(&args);
+            exit_with(run(cli.command).map(|()| ExitCode::SUCCESS))
+        }
     }
+}
+
+fn exit_with(result: Result<ExitCode>) -> ExitCode {
+    result.unwrap_or_else(|err| {
+        eprintln!("error: {err:#}");
+        ExitCode::FAILURE
+    })
 }
 
 /// Inserts the `rusticate` argument cargo would pass, when invoked directly.
@@ -158,9 +181,9 @@ fn print_report(plan: &Plan, report: &Report, created: Option<&Path>) {
     if let Some(dir) = created {
         println!("  cd {}", dir.display());
     }
-    println!("  cargo xtask setup     # git hooks; lists any missing tool");
-    println!("  cargo xtask db up     # Postgres and NATS in Docker");
-    println!("  cargo xtask verify    # the definition of done");
+    println!("  cargo rusticate setup     # git hooks; lists any missing tool");
+    println!("  cargo rusticate db up     # Postgres and NATS in Docker");
+    println!("  cargo rusticate verify    # the definition of done");
     println!("\nThen read AGENTS.md: it is the operating manual for people and coding agents.");
 }
 

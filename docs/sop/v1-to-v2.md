@@ -62,7 +62,7 @@ The direction was right and is unchanged:
 
 | v1 claim | v2 mechanism |
 |---|---|
-| "Physically absent from Cargo.toml" | `architecture.toml` + `cargo xtask arch` dependency rules (allowlist for engines) |
+| "Physically absent from Cargo.toml" | `architecture.toml` + `cargo rusticate arch` dependency rules (allowlist for engines) |
 | "Physically impossible" float bugs | `arch` bans `f32`/`f64` in engines; `float_arithmetic` denied; integer money types |
 | Determinism (implied) | engine `clippy.toml` bans clocks, id generation and hash iteration; `arch` keeps it in sync with the root config |
 | Overflow (not mentioned) | `arithmetic_side_effects` + `as_conversions` denied in engines; release overflow checks |

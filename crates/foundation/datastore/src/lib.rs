@@ -7,7 +7,7 @@
 //! * [`TenantTx`]: that transaction. Domain `db.rs` modules take
 //!   `&mut TenantTx`, never a pool.
 //! * [`SystemStore`] / [`SystemTx`]: cross-tenant access for the outbox relay
-//!   and maintenance jobs only (restricted by `cargo xtask arch`).
+//!   and maintenance jobs only (restricted by `cargo rusticate arch`).
 //! * Both stores verify their database role at startup and refuse to run with
 //!   the wrong one (a superuser, an RLS-bypassing app role, a table owner).
 

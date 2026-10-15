@@ -1,4 +1,4 @@
-//! `cargo xtask arch`: architecture conformance (SOP §11, rule catalogue).
+//! `cargo rusticate arch`: architecture conformance (SOP §11, rule catalogue).
 //!
 //! Three families of checks, all driven by `architecture.toml` and the
 //! workspace itself:

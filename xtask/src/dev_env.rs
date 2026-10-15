@@ -42,7 +42,7 @@ const WORKER: &[(&str, &str)] = &[
     ("APP_TELEMETRY__LOG_FORMAT", "pretty"),
 ];
 
-/// The binaries `cargo xtask run` can start.
+/// The binaries `cargo rusticate run` can start.
 #[derive(Debug, Clone, Copy, clap::ValueEnum)]
 pub enum App {
     Api,

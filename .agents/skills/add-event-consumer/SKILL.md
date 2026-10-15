@@ -39,7 +39,7 @@ Event rules:
 ## Consume events
 
 ```sh
-cargo xtask new feature <ctx> <verb_noun> --kind event
+cargo rusticate new feature <ctx> <verb_noun> --kind event
 ```
 
 This creates `<feature>.rs` (workflow in consumer form), `<feature>/handler.rs`, `<feature>/db.rs` and a test, and registers the consumer in [`apps/worker/src/tasks.rs`](../../../apps/worker/src/tasks.rs). Fill the `SCAFFOLD:` markers:

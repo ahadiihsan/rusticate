@@ -27,7 +27,7 @@ The template and the generator share one version. `cargo-rusticate X.Y.Z` create
    ```sh
    cargo install cargo-rusticate --locked --version X.Y.Z
    cargo rusticate new probe --owner acme --path /tmp/probe
-   cd /tmp/probe && cargo xtask verify --fast
+   cd /tmp/probe && cargo rusticate verify --fast
    ```
 
 A broken release is fixed forward: release `X.Y.Z+1`, then `cargo yank --version X.Y.Z cargo-rusticate`. Never move or delete a release tag; installed generators keep fetching it.

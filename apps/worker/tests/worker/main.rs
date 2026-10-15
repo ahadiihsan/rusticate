@@ -1,5 +1,5 @@
 //! Worker end-to-end tests against real Postgres and a real NATS JetStream
-//! (`cargo xtask db up` starts both; CI runs them as services).
+//! (`cargo rusticate db up` starts both; CI runs them as services).
 #![cfg(test)]
 
 mod health;
