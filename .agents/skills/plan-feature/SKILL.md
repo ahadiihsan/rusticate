@@ -76,7 +76,7 @@ Run this phase when `features/README.md` does not exist, or when the human asks 
 1. Create `features/README.md` from [templates/features-README.md](templates/features-README.md).
 2. Write the introduction from what the human gave, in their words, under the template's headings. Each heading has one job; put content where it belongs (features in *Big picture*, not *Constraints*).
 3. Ask only introduction questions, following [How to interview](#how-to-interview): users, scale, privacy rules, integrations, anything missing from the big picture. Do **not** ask about contexts, slices, dependencies or details of one feature; those belong to its own phases.
-4. List the candidate features as `proposed` rows: one line each, a one-sentence outcome with a user as the subject, and a `Depends on` that names an existing row or is empty. Apply only the *one outcome* check here. The other checks run in Phase 1, when the feature is framed. Add no checks table.
+4. List the candidate features: items from *Big picture* as `proposed` rows, items from *Later* as `later` rows, so the index shows what is near and what is not. Each row is one line: a one-sentence outcome with a user as the subject, and a `Depends on` that names an existing row or is empty. Apply only the *one outcome* check here. The other checks run in Phase 1, when the feature is framed. Add no checks table.
 5. Check coverage: every item in *Big picture* and *Later* maps to at least one row, and every row maps back to the introduction.
 6. Show the file and ask the human to approve it.
 
@@ -85,7 +85,7 @@ Gate: the introduction has no unconfirmed numbers or unflagged rule conflicts, c
 ## Find or create the feature folder
 
 1. Check the index in `features/README.md`. If the feature already has a folder, work out which phase it is in: it is the first file whose `status:` is not `approved`.
-2. A `proposed` row in the index has no folder yet; it becomes a feature when the human picks it. Use its number, and set its status to `framing`.
+2. A `proposed` or `later` row in the index has no folder yet; it becomes a feature when the human picks it. Use its number, and set its status to `framing`.
 3. For a new feature, pick the next number and a short kebab-case slug (`004-consent`). Copy [templates/brief.md](templates/brief.md), [templates/spec.md](templates/spec.md) and [templates/design.md](templates/design.md) into the folder. Add a row to the index with status `framing`, if it has none yet.
 
 ## Phase 1: Frame (`brief.md`)
@@ -158,7 +158,7 @@ Map the approved spec onto this boilerplate. Read AGENTS.md and the [SOP](../../
 
 **Evidence**, not hunches. Only these count:
 
-- the introduction's *Later* list, or a `proposed` row in the index, extends this feature (email campaigns now, "LINE and other channels" later);
+- the introduction's *Later* list, or a `proposed` or `later` row in the index, extends this feature (email campaigns now, "LINE and other channels" later);
 - the human said "for now", "first", "at least", "near future", or listed kinds ("a booking, an experience or goods");
 - a glossary term has several kinds, and the spec covers only some of them;
 - a dependency of a later feature reads data this feature owns (a future segment predicate over attributes stored here).
@@ -213,7 +213,7 @@ New needs arrive while work is under way ("we also want LINE campaigns"). Nothin
 
 | The new need arrives while | Do |
 |---|---|
-| any time | Add it to the introduction's *Later* list and as a `proposed` row in the index. Writing it down commits to nothing. |
+| any time | Add it to the introduction's *Later* list and as a `later` row in the index. Writing it down commits to nothing. |
 | a feature is in phase 1 to 3 | If it does not change this feature's outcome, add it under *Out of scope* and go on. If it does, the human edits the brief or spec; that document goes back to `status: draft` and through its gate again. |
 | its tickets are being built | Never change the current ticket. Finish or release it. The human decides whether it becomes a new ticket in this feature or a new feature. |
 | the feature is `done` | A done feature is not reopened. The change becomes a new feature or new tickets. |

@@ -28,8 +28,9 @@ pr: null
 
 ## Read first
 
-- [spec: R1](../spec.md#r1)
-- [design: slice table](../design.md#slices)
+<!-- Paths relative to this ticket file. Turn each into a Markdown link in the real ticket. -->
+- spec: R1 (`../spec.md#r1`)
+- design: slice table (`../design.md#slices`)
 
 ## Log
 
