@@ -22,7 +22,7 @@ Never a feature: a layer or a piece of technology ("database schema", "auth midd
 
 A **slice** is one `verb_noun` use case (`merge_profiles`), one pull request. It is what `cargo rusticate new feature` scaffolds and [implement-feature](../implement-feature/SKILL.md) builds, even though the CLI calls it a feature. A feature becomes one or more slices.
 
-Run the four checks in Phase 1 once the sentence is written, and again in Phase 3 once the slices are known. If any check fails, handle it as below before going on.
+Run the four checks in Phase 1 once the sentence is written, and again in Phase 3 once the slices are known. (When the index is first written in Phase 0, only the *one outcome* check applies: the others need a framed feature.) If any check fails, handle it as below before going on.
 
 ### When the request is not one outcome
 
@@ -44,13 +44,49 @@ Stop after the proposal and wait for the human to choose. If the human insists o
 - **Ask, never invent.** When the human has not said something (a rule, a limit, who may do what), add it to *Open questions*. A guessed requirement is the main source of over-engineering.
 - **Small and concrete.** Use the domain's words, and cut whatever the stories do not need.
 - **Read only what the phase needs:** `features/README.md`, this feature's folder, the features it names as dependencies, and for the design phase AGENTS.md and the owning context's code.
+- **Effort follows scope.** Spend effort only on what this session decides. Record a *Later* item, a deferred topic or an idea for another feature in one line. Do not research it, design it, or ask follow-up questions about it, even when the human keeps talking about it; offer to note it and return to the session's scope.
+- **Show the file, not a summary.** When asking for approval at a gate, show the file as it is on disk, or the exact sections that changed. The human approves what is in the file.
 
-## Phase 0: find or create the folder
+### How to interview
 
-1. If `features/README.md` does not exist, create it from [templates/features-README.md](templates/features-README.md) and ask the human to write the introduction.
-2. Check the index in `features/README.md`. If the feature already has a folder, work out which phase it is in: it is the first file whose `status:` is not `approved`.
-3. A `proposed` row in the index has no folder yet; it becomes a feature when the human picks it.
-4. For a new feature, pick the next number and a short kebab-case slug (`004-consent`). Copy [templates/brief.md](templates/brief.md), [templates/spec.md](templates/spec.md) and [templates/design.md](templates/design.md) into the folder. Add a row to the index with status `framing`.
+These rules apply in every phase:
+
+1. **Announce the batch.** Say how many questions there are, and ask them together, numbered. Ask no more than eight at a time; if more remain, say how many.
+2. **Make each question answerable:**
+   - Add a concrete example, or two or three options.
+   - Use plain words. If a term from this skill is unavoidable (bounded context, slice), explain it in one line.
+   - Always allow "decide later": record a placeholder and move on.
+3. **Ask only what this phase needs.** Leave questions that belong to a later phase, or to one feature, for that phase.
+4. **Clarify, don't guess.** If an answer can be read two ways ("p3": Phase 3 or priority 3?), ask a one-line question before writing anything.
+5. **An example is not a replacement.** When the human explains *why* something is useful, or gives an example, add it to what is already written; do not rewrite the outcome around it.
+6. **Say what an answer implies before recording it.** An answer that adds a role, a permission, data access or a scale target is a requirement. State it back in one line, with its consequence, and check it as described below.
+
+### Check every requirement
+
+Before writing down a requirement:
+
+- **Against the hard rules.** If it touches tenancy, permissions, personal data, SQL or migrations, check it against AGENTS.md (*Hard rules*, *Never*) and the SOP. If it conflicts, say so straight away with the rule ID ("support reading all tenants' data conflicts with tenant isolation, DB-001/DB-003, and the RLS rules"). Record it as an open question for a project ADR, not as a fact.
+- **Numbers make sense.** Restate a rate per second and per day, and compare it with the other numbers already given ("100,000 per second is 8.6 billion per day, about 700 times the email target"). Confirm it before recording it.
+- **Project-wide conventions go to ADRs.** A rule for every context (a JSON column policy, where allowed values are enforced) is a candidate for a project ADR in `docs/adr/`. List it as an *ADR candidate* in the README; do not bury it in *Constraints*.
+
+## Phase 0: the introduction and the index
+
+Run this phase when `features/README.md` does not exist, or when the human asks to revise its introduction.
+
+1. Create `features/README.md` from [templates/features-README.md](templates/features-README.md).
+2. Write the introduction from what the human gave, in their words, under the template's headings. Each heading has one job; put content where it belongs (features in *Big picture*, not *Constraints*).
+3. Ask only introduction questions, following [How to interview](#how-to-interview): users, scale, privacy rules, integrations, anything missing from the big picture. Do **not** ask about contexts, slices, dependencies or details of one feature; those belong to its own phases.
+4. List the candidate features as `proposed` rows: one line each, a one-sentence outcome with a user as the subject, and a `Depends on` that names an existing row or is empty. Apply only the *one outcome* check here. The other checks run in Phase 1, when the feature is framed. Add no checks table.
+5. Check coverage: every item in *Big picture* and *Later* maps to at least one row, and every row maps back to the introduction.
+6. Show the file and ask the human to approve it.
+
+Gate: the introduction has no unconfirmed numbers or unflagged rule conflicts, coverage is complete, and the human approves.
+
+## Find or create the feature folder
+
+1. Check the index in `features/README.md`. If the feature already has a folder, work out which phase it is in: it is the first file whose `status:` is not `approved`.
+2. A `proposed` row in the index has no folder yet; it becomes a feature when the human picks it. Use its number, and set its status to `framing`.
+3. For a new feature, pick the next number and a short kebab-case slug (`004-consent`). Copy [templates/brief.md](templates/brief.md), [templates/spec.md](templates/spec.md) and [templates/design.md](templates/design.md) into the folder. Add a row to the index with status `framing`, if it has none yet.
 
 ## Phase 1: Frame (`brief.md`)
 
