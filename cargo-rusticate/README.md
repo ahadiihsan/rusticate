@@ -47,7 +47,7 @@ cargo rusticate init --owner acme
 | `--owner <login>` | GitHub user or organisation that owns the repository. Written to `CODEOWNERS` and the `SECURITY.md` report link. Without it they say `OWNER`. |
 | `--path <dir>` | (`new`) Directory to create. Default: `./<name>`. |
 | `--name <name>` | (`init`) Project name. Default: the directory's name. |
-| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.3.1` for 0.3.1). `--ref main` gives the latest unreleased template. |
+| `--ref <tag-or-branch>` | Template version. Default: the release matching this generator (`v0.4.0` for 0.4.0). `--ref main` gives the latest unreleased template. |
 | `--template <url-or-dir>` | Another source: a fork's git URL, or a local checkout of the template. |
 | `--no-git` | Do not initialise a git repository. |
 | `--minimal` | Core only; add modules with `--with`. |
