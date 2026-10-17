@@ -1,6 +1,13 @@
 # Features
 
-<!-- Introduction: what this service is, for whom, and why it is built on this boilerplate. Written by the team. -->
+<!-- Introduction, written by the team: what this service is, for whom, and why it is built on this boilerplate. Include:
+     - **Big picture:** what it becomes.
+     - **Users:** the roles.
+     - **Now:** the features planned one at a time (the index below).
+     - **Later:** known future needs, not planned. Designs must not block them, but build nothing for them.
+     - **Not building:** explicit non-goals.
+     - **Constraints:** scale, privacy rules, integrations. -->
+
 
 We do not plan every feature at once. Each feature is planned, reviewed and built on its own, in a folder of this directory, following the `plan-feature` skill (`.agents/skills/plan-feature/SKILL.md`).
 

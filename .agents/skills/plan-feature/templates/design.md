@@ -36,6 +36,14 @@ Standard tests per slice:
 
 1. <smallest end-to-end slice first>
 
+## Evolution
+
+<!-- From the plan-feature evolution check. One row per signal, or "none found". -->
+
+| Signal (evidence) | Choice | Prepared now, or risk accepted |
+|---|---|---|
+| | prepare the shape / today only | |
+
 ## Decisions
 
 <!-- Links to decisions/NNNN-*.md and to project ADRs in docs/adr/. Any rule exception: rule ID and reason. -->
