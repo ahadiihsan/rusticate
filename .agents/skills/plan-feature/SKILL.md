@@ -116,6 +116,27 @@ Map the approved spec onto this boilerplate. Read AGENTS.md and the [SOP](../../
    | anything else | no diagram |
 
    A diagram uses only names from the glossary and the slice table. A state, step or participant that is not in the spec means the design invented something: fix the spec or the diagram.
+7. **Evolution check.** Look for evidence that this feature will grow in a direction the design could block (see [below](#evolution-check)). Ask the human once, and record the answer under *Evolution*.
+
+### Evolution check
+
+**Evidence**, not hunches. Only these count:
+
+- the introduction's *Later* list, or a `proposed` row in the index, extends this feature (email campaigns now, "LINE and other channels" later);
+- the human said "for now", "first", "at least", "near future", or listed kinds ("a booking, an experience or goods");
+- a glossary term has several kinds, and the spec covers only some of them;
+- a dependency of a later feature reads data this feature owns (a future segment predicate over attributes stored here).
+
+If there is no evidence, write "none found" under *Evolution* and do not ask. If there is, ask **one** question that lists each signal with two choices:
+
+| Choice | What it means |
+|---|---|
+| **Prepare the shape** | Only what is cheap now and expensive later: data shape, keys, enums, and naming that leave room (consent per channel, not an `email_opt_in` flag; a `kind` column with today's values). For each item, list what it costs now and what it saves later. |
+| **Today only** (always offered, never discouraged) | Design for the stories as written. The risk is recorded, and nothing else changes. |
+
+Never offer generic *code*: plugin interfaces, provider abstractions, frameworks for kinds that do not exist yet. Generic code is extracted when the second real case is planned, and both cases shape it. If the human asks for it anyway, record it as a decision with its reason, and build the smallest version.
+
+Record the answer for each signal under *Evolution* in `design.md`: the signal, the choice, and the items prepared, or the risk accepted. Do not ask again about a recorded signal. Raise it again only when new evidence appears (a new *Later* item, or a new story).
 
 Minimum for `design.md`:
 
@@ -126,7 +147,8 @@ Minimum for `design.md`:
 - [ ] a build order covering every slice;
 - [ ] *decisions*: links, or "none";
 - [ ] *risks*: at least one, or "none" with a reason;
-- [ ] the diagrams the table in step 6 requires, or none when it requires none.
+- [ ] the diagrams the table in step 6 requires, or none when it requires none;
+- [ ] *evolution*: each signal with the human's choice, or "none found".
 
 Gate: every item above is ticked, the feature still passes [the four checks](#what-a-feature-is), and the human approves.
 
@@ -149,9 +171,23 @@ Building starts only when the human asks for it ("build <feature>" or "do CONS-T
 
 Name integration tests after their scenarios (`cons_s04_withdrawn_consent_blocks_export`). The spec describes current behaviour: if building shows it was wrong, change `spec.md` in the same pull request, keep the scenario IDs, and tell the human.
 
+## When needs change
+
+New needs arrive while work is under way ("we also want LINE campaigns"). Nothing is frozen except work in progress:
+
+| The new need arrives while | Do |
+|---|---|
+| any time | Add it to the introduction's *Later* list and as a `proposed` row in the index. Writing it down commits to nothing. |
+| a feature is in phase 1 to 3 | If it does not change this feature's outcome, add it under *Out of scope* and go on. If it does, the human edits the brief or spec; that document goes back to `status: draft` and through its gate again. |
+| its tickets are being built | Never change the current ticket. Finish or release it. The human decides whether it becomes a new ticket in this feature or a new feature. |
+| the feature is `done` | A done feature is not reopened. The change becomes a new feature or new tickets. |
+
+A new need that extends a planned feature is new evidence for its [evolution check](#evolution-check): ask about it, even if that feature's design is approved. An approved design whose evolution answer changes goes back to `draft` and through its gate again.
+
 ## Pitfalls
 
 - **Writing the design during framing.** Tables, endpoints and crates in `brief.md` mean the problem is not yet understood.
 - **Scenarios that test the framework** (JSON shape, status codes). Those belong to the adapter's tests, not to the spec.
 - **One giant slice.** If a slice touches several aggregates or rules, split it.
 - **Planning the next feature "while we're here".** Write it under *Out of scope* and stop.
+- **Building for the future without being asked.** Generic parts come only from the [evolution check](#evolution-check), as data shape, and only when the human chooses it.
