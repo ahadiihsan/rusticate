@@ -34,7 +34,7 @@ We do not plan every feature at once. Each feature is planned, reviewed and buil
 
 ### What counts as a feature
 
-A feature is one outcome a user gets, stated in one sentence ("Marketers can merge duplicate customer profiles"). It is useful on its own, writes to one bounded context, and is built as 1 to 6 slices: `verb_noun` use cases, one pull request each. A layer ("database schema"), a piece of technology, or bare CRUD is not a feature. Ideas not yet planned are listed as `proposed` rows in the index, with no folder.
+A feature is one outcome a user gets, stated in one sentence ("Marketers can merge duplicate customer profiles"). It is useful on its own, writes to one bounded context, and is built as 1 to 6 slices: `verb_noun` use cases, one pull request each. A layer ("database schema"), a piece of technology, or bare CRUD is not a feature. Ideas not yet planned are rows in the index with no folder: `proposed` for the near term, `later` for known future needs.
 
 ### How a feature is planned
 
@@ -67,4 +67,4 @@ Decisions that only affect one feature live in its `decisions/`. Those that cros
 
 | # | Feature | Scenario key | Status | Depends on |
 |---|---|---|---|---|
-<!-- | 001 | Marketers can merge duplicate customer profiles. | (set in spec) | proposed · framing · specifying · designing · ready · building · done | 000 or empty | -->
+<!-- | 001 | Marketers can merge duplicate customer profiles. | (set in spec) | later · proposed · framing · specifying · designing · ready · building · done | 000 or empty | -->
