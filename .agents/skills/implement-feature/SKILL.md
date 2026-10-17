@@ -20,6 +20,8 @@ Compiled, tested usage examples of the platform APIs (read the one you are about
 
 ## 1. Classify before writing code
 
+If the work comes from a planned feature, it is a ticket (`features/<NNN-slug>/tickets/<id>.md`, format in [tickets.md](../plan-feature/tickets.md)). Claim it as the [state rules](../plan-feature/tickets.md#state) allow: the human's choice, or else the first `open` ticket whose dependencies are `done`. Read its *Read first* links; the answers below are already in the design's slice table. Do only what the ticket says, and name each test after the scenario it proves. A new feature with no plan starts with [plan-feature](../plan-feature/SKILL.md).
+
 Answer these in your notes or PR description:
 
 | Question | Decides |
@@ -121,6 +123,13 @@ cargo rusticate verify         # the definition of done
 ```
 
 Then self-review with [review-change](../review-change/SKILL.md).
+
+For a ticket, finish it as [tickets.md](../plan-feature/tickets.md#state) says:
+
+- Tick every acceptance item.
+- In the same pull request, set `status: done` and `pr`, and add a log line. The merge is what makes it done.
+- If you cannot finish, release the ticket (`open`, `assignee: null`) with a log line saying what is left. Never change its scope yourself.
+- When it is the feature's last ticket, ask the human whether the feature is complete, and mark it `done` in the index only once they agree.
 
 ## Pitfalls
 
