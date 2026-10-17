@@ -61,6 +61,7 @@ gh pr merge --auto --squash       # merges itself once the checks are green
 
 ## Workflow: requirement → code
 
+0. **Plan** (new feature): follow [plan-feature](.agents/skills/plan-feature/SKILL.md) until its tickets (`features/<NNN-slug>/tickets/`) are approved. Then build one ticket per pull request, in dependency order.
 1. **Classify.**
    - Which context owns it? A new context needs an ADR.
    - Is it a command (POST), a query (GET), or (with messaging) a reaction to an event?
@@ -77,7 +78,8 @@ Skills with the detailed playbooks are in [`.agents/skills/`](.agents/skills):
 
 | Skill | Use when |
 |---|---|
-| [implement-feature](.agents/skills/implement-feature/SKILL.md) | turning a PRD/TRD/ticket into a feature (the default) |
+| [plan-feature](.agents/skills/plan-feature/SKILL.md) | a new feature: brief → spec → design → tickets under `features/`, before any code |
+| [implement-feature](.agents/skills/implement-feature/SKILL.md) | building one ticket of a planned feature, or a small change that needs no plan (the default for code) |
 | [write-engine-rules](.agents/skills/write-engine-rules/SKILL.md) | business rules, money, lifecycles, property tests |
 | [new-bounded-context](.agents/skills/new-bounded-context/SKILL.md) | a capability no existing context owns |
 | [troubleshoot](.agents/skills/troubleshoot/SKILL.md) | a check, build, test or runtime error you don't understand |
