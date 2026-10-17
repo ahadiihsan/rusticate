@@ -1,21 +1,42 @@
 # Features
 
-<!-- Introduction, written by the team: what this service is, for whom, and why it is built on this boilerplate. Include:
-     - **Big picture:** what it becomes.
-     - **Users:** the roles.
-     - **Now:** the features planned one at a time (the index below).
-     - **Later:** known future needs, not planned. Designs must not block them, but build nothing for them.
-     - **Not building:** explicit non-goals.
-     - **Constraints:** scale, privacy rules, integrations. -->
+## Introduction
 
+<!-- Written with the team (plan-feature, Phase 0). Each heading has one job; keep content under the right one. -->
+
+### Big picture
+
+<!-- What this service is and becomes: one bullet per capability, in the team's words. Every bullet maps to at least one row in the index. -->
+
+### Users
+
+<!-- One line per role: who they are and what they do. Permissions that cross tenants are flagged against the hard rules. -->
+
+### Later
+
+<!-- Known future needs, one line each, not planned. Designs must not block them; nothing is built for them until planned. -->
+
+### Not building
+
+<!-- Explicit product non-goals, or "None beyond per-feature scope: only selected and planned features are built." -->
+
+### Constraints
+
+<!-- Only scale (each rate per second and per day, confirmed), rules that apply (privacy, retention), and required integrations. Not features, not design conventions. -->
+
+### Open questions and ADR candidates
+
+<!-- Rule conflicts (with rule ID), unconfirmed facts, and project-wide conventions that need a project ADR in docs/adr/. -->
+
+## How we work
 
 We do not plan every feature at once. Each feature is planned, reviewed and built on its own, in a folder of this directory, following the `plan-feature` skill (`.agents/skills/plan-feature/SKILL.md`).
 
-## What counts as a feature
+### What counts as a feature
 
 A feature is one outcome a user gets, stated in one sentence ("Marketers can merge duplicate customer profiles"). It is useful on its own, writes to one bounded context, and is built as 1 to 6 slices: `verb_noun` use cases, one pull request each. A layer ("database schema"), a piece of technology, or bare CRUD is not a feature. Ideas not yet planned are listed as `proposed` rows in the index, with no folder.
 
-## How a feature is planned
+### How a feature is planned
 
 | Phase | Output | Gate |
 |---|---|---|
@@ -27,7 +48,7 @@ A feature is one outcome a user gets, stated in one sentence ("Marketers can mer
 
 Each document starts with a `status:` line (`draft` or `approved`). No code is written for a feature until its tickets are approved. Tickets follow the format in `.agents/skills/plan-feature/tickets.md`: Markdown with strict YAML front matter, with state `open`, `in_progress` or `done`.
 
-## Layout
+### Layout
 
 ```text
 features/
@@ -46,4 +67,4 @@ Decisions that only affect one feature live in its `decisions/`. Those that cros
 
 | # | Feature | Scenario key | Status | Depends on |
 |---|---|---|---|---|
-<!-- | 001 | [Example](001-example/brief.md) | EXM | proposed · framing · specifying · designing · ready · building · done | - | -->
+<!-- | 001 | Marketers can merge duplicate customer profiles. | (set in spec) | proposed · framing · specifying · designing · ready · building · done | 000 or empty | -->
