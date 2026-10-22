@@ -328,6 +328,9 @@ fn verify(fast: bool) -> Result<()> {
         return Ok(());
     }
     // rusticate:module(postgres):start
+    // Query metadata compiles every `query!` against the live schema, so a
+    // database fresh from `db up` must be migrated first.
+    sh::step("migrate", db::migrate)?;
     sh::step("query metadata", || db::prepare(true))?;
     // rusticate:module(postgres):end
     sh::step("tests", || test(&[], false))?;
